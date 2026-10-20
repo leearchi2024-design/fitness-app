@@ -7,6 +7,7 @@ import { useStore } from '../store/AppStore';
 export function Me() {
   const { data, summary, setAddBack, reset } = useStore();
   const [editing, setEditing] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const p = data.profile;
   if (!p || !summary) return null;
   if (editing) return <EditWrap onDone={() => setEditing(false)} />;
@@ -43,9 +44,19 @@ export function Me() {
       <section className="card flat">
         <h2>帳號與會員</h2>
         <p className="muted">目前為訪客模式，資料只存在這台裝置。登入、雲端同步、會員訂閱為後續階段功能。</p>
-        <button className="btn sm" style={{ marginTop: 12 }} onClick={() => confirm('確定要清除這台裝置上的所有資料？') && reset()}>
-          清除資料並重新設定
-        </button>
+        {confirmReset ? (
+          <div className="stack" style={{ marginTop: 12 }}>
+            <p style={{ fontWeight: 700 }}>確定要清除這台裝置上的所有資料？這個動作無法復原。</p>
+            <div className="row">
+              <button className="btn sm dark" onClick={reset}>確定清除</button>
+              <button className="btn sm" onClick={() => setConfirmReset(false)}>取消</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn sm" style={{ marginTop: 12 }} onClick={() => setConfirmReset(true)}>
+            清除資料並重新設定
+          </button>
+        )}
       </section>
 
       <p className="muted" style={{ textAlign: 'center' }}>v0.1・第一階段 MVP</p>
