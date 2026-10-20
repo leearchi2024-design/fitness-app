@@ -1,26 +1,29 @@
 // ===== 模組五：動作資料 =====
 // src/data/notion/*.json 保留 Notion 原始欄位名稱，之後可直接用同步腳本從 Notion 匯出覆蓋。
 // 這支檔案負責把三個資料庫轉成 APP 統一使用的 Exercise 格式。
-import type { Difficulty, Exercise } from '../types';
+import type { Difficulty, Exercise, ExerciseMedia } from '../types';
 import strengthRaw from './notion/strength.json';
 import yogaRaw from './notion/yoga.json';
 import cardioRaw from './notion/cardio.json';
 
-interface StrengthRow {
+interface Base { id: string; notionId?: string; 示範影片?: string }
+interface StrengthRow extends Base {
   動作名稱: string; 主要肌群: string; 動作要點: string; 器材: string;
   常見錯誤: string; 建議次數組數: string; 訓練部位: string[]; 難度: string;
 }
-interface YogaRow {
+interface YogaRow extends Base {
   體式名稱: string; 英文名稱: string; 作用部位: string[]; 停留時間: string;
   功效: string; 注意事項: string; 經期適合: boolean; 難度: string; 體式類別: string;
 }
-interface CardioRow {
+interface CardioRow extends Base {
   動作名稱: string; 動作要點: string; 建議時間: string; 強度: string; 用途: string[];
   簡化版: string; 訓練部位: string[]; 難度: string; 需要跳躍: boolean;
 }
 
-const fromStrength = (r: StrengthRow, i: number): Exercise => ({
-  id: `s${String(i + 1).padStart(2, '0')}`,
+const fromStrength = (r: StrengthRow): Exercise => ({
+  id: r.id,
+  notionId: r.notionId,
+  media: toMedia(r.示範影片),
   source: 'strength',
   name: r.動作名稱,
   bodyParts: r.訓練部位,
@@ -36,8 +39,10 @@ const fromStrength = (r: StrengthRow, i: number): Exercise => ({
   tags: [r.器材],
 });
 
-const fromYoga = (r: YogaRow, i: number): Exercise => ({
-  id: `y${String(i + 1).padStart(2, '0')}`,
+const fromYoga = (r: YogaRow): Exercise => ({
+  id: r.id,
+  notionId: r.notionId,
+  media: toMedia(r.示範影片),
   source: 'yoga',
   name: r.體式名稱,
   nameEn: r.英文名稱,
@@ -52,8 +57,10 @@ const fromYoga = (r: YogaRow, i: number): Exercise => ({
   tags: [r.體式類別],
 });
 
-const fromCardio = (r: CardioRow, i: number): Exercise => ({
-  id: `c${String(i + 1).padStart(2, '0')}`,
+const fromCardio = (r: CardioRow): Exercise => ({
+  id: r.id,
+  notionId: r.notionId,
+  media: toMedia(r.示範影片),
   source: 'cardio',
   name: r.動作名稱,
   bodyParts: r.訓練部位,
@@ -66,6 +73,16 @@ const fromCardio = (r: CardioRow, i: number): Exercise => ({
   periodFriendly: r.強度 === '低衝擊',
   tags: [r.強度, ...r.用途],
 });
+
+/** 由檔名副檔名判斷示範檔的類型 */
+export function toMedia(src?: string): ExerciseMedia | undefined {
+  if (!src) return undefined;
+  const ext = src.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'svg') return { kind: 'svg', src };
+  if (['mp4', 'webm', 'mov', 'm4v'].includes(ext)) return { kind: 'video', src };
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif'].includes(ext)) return { kind: 'image', src };
+  return undefined;
+}
 
 export const EXERCISES: Exercise[] = [
   ...(strengthRaw as StrengthRow[]).map(fromStrength),

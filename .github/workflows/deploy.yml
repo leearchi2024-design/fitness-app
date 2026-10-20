@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_call: # 讓「從 Notion 同步」完成後接著部署
 
 permissions:
   contents: read
@@ -20,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # 同步流程剛推送的新資料也要包含進來
       - uses: actions/setup-node@v4
         with:
           node-version: 22

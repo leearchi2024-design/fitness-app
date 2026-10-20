@@ -96,10 +96,20 @@ function Library() {
   );
 }
 
+function Thumb({ e }: { e: Exercise }) {
+  const [failed, setFailed] = useState(false);
+  const showImg = e.media && e.media.kind !== 'video' && !failed;
+  return (
+    <span className={`thumb ${e.source === 'strength' ? 's' : e.source === 'cardio' ? 'c' : ''}`} style={showImg ? { background: '#fffdf8' } : undefined}>
+      {showImg ? <img src={e.media!.src} alt="" onError={() => setFailed(true)} /> : SOURCE_LABEL[e.source][0]}
+    </span>
+  );
+}
+
 export function ExerciseRow({ e }: { e: Exercise }) {
   return (
     <a className="list-item" href={`#/exercise/${e.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-      <span className={`thumb ${e.source === 'strength' ? 's' : e.source === 'cardio' ? 'c' : ''}`}>{SOURCE_LABEL[e.source][0]}</span>
+      <Thumb e={e} />
       <span className="grow">
         <span className="title">{e.name}</span>
         <span className="muted" style={{ display: 'block' }}>{e.bodyParts.join('・')}・{e.dose}</span>

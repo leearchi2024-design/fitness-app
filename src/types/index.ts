@@ -58,7 +58,15 @@ export interface Exercise {
   jumping: boolean;
   periodFriendly: boolean;
   tags: string[]; // 體式類別、用途、強度等
-  videoUrl?: string;
+  notionId?: string; // 對應 Notion 資料庫的頁面 ID（同步用）
+  media?: ExerciseMedia; // 示範影片／動畫（Notion「示範影片」欄位）
+}
+
+export interface ExerciseMedia {
+  /** svg：動畫或插圖；image：png/jpg/gif/webp；video：mp4/webm/mov */
+  kind: 'svg' | 'image' | 'video';
+  /** 相對於網站根目錄的路徑，例如 media/strength/s01.svg */
+  src: string;
 }
 
 // 模組三：日曆與紀錄

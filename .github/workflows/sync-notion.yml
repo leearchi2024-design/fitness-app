@@ -1,0 +1,49 @@
+# 從 Notion 同步動作資料與示範影片 → 自動提交 → 重新部署
+# 使用方式：GitHub repository → Actions → 「Sync from Notion」→ Run workflow
+# 事前設定：Settings → Secrets and variables → Actions → New repository secret
+#           名稱 NOTION_TOKEN，值為 Notion 整合的金鑰（secret_ 或 ntn_ 開頭）
+name: Sync from Notion
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: '只同步某個資料庫（strength / yoga / cardio，留空 = 全部）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 從 Notion 下載資料與示範影片
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/sync-notion.mjs ${{ inputs.only }}
+      - run: npm install
+      - name: 測試（資料格式有問題就停止，不會部署）
+        run: npm test
+      - name: 提交變更
+        run: |
+          git config user.name "notion-sync"
+          git config user.email "notion-sync@users.noreply.github.com"
+          git add src/data/notion public/media
+          if git diff --cached --quiet; then
+            echo "Notion 沒有變更"
+          else
+            git commit -m "從 Notion 同步動作資料與示範影片"
+            git push
+          fi
+
+  deploy:
+    needs: sync
+    uses: ./.github/workflows/deploy.yml

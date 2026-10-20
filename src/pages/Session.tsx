@@ -1,6 +1,7 @@
 // ===== 模組 5-4：跟練模式 =====
 // 大字倒數、組間休息、下一動作預告、語音口令、螢幕常亮、完成後自動寫入日曆。
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ExerciseMediaView } from '../components/ExerciseMediaView';
 import { usePlanFor } from '../features/plan/useTodayPlan';
 import { toKey } from '../lib/date';
 import { go } from '../router';
@@ -120,7 +121,7 @@ export function Session() {
         <span className="tag" style={{ borderColor: 'var(--paper)' }}>{phase === 'rest' ? '休息' : cur.block}</span>
         {phase === 'work' ? (
           <>
-            <div className="session-figure">示範影片</div>
+            <ExerciseMediaView key={cur.e.id} exercise={cur.e} variant="session" />
             <h1 style={{ fontSize: 30 }}>{cur.e.name}</h1>
             <p style={{ color: 'var(--dot)', maxWidth: 360 }}>{cur.e.cues}</p>
           </>
