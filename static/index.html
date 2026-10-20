@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>練起來｜個人化健身</title>
+    <meta name="description" content="依性別與目標個人化的健身 APP：跟練、飲食紀錄、日曆追蹤。" />
+
+    <!-- 手機 APP 外觀 -->
+    <meta name="theme-color" content="#F7F3EA" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="練起來" />
+    <link rel="manifest" href="manifest.webmanifest" />
+
+    <!-- 圖示：iPhone 主畫面用 apple-touch-icon（180×180 PNG） -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+
+    <!-- 字型 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Archivo+Black&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>請開啟 JavaScript 才能使用這個 APP。</noscript>
+    <!-- app.js 內含整個 APP（React 已打包在內），也會註冊 sw.js -->
+    <script src="app.js" defer></script>
+  </body>
+</html>
