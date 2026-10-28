@@ -1,7 +1,7 @@
 // 練起來 Service Worker
 // 作用：讓 APP 可「加入主畫面」、離線也能開啟。
 // 更新網站時，請把下面的 VERSION 改一個數字（例如 v0.1.1），手機才會抓到新版本。
-const VERSION = 'v0.6.0';
+const VERSION = 'v0.7.0';
 const CACHE = 'fitness-app-' + VERSION;
 const ASSETS = [
   './',

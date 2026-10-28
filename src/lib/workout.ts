@@ -28,9 +28,9 @@ const TYPE_SOURCE: Record<WorkoutType, Exercise['source']> = {
 };
 
 /** 每個動作約佔的分鐘數（含組間休息） */
-const MINUTES_PER: Record<Exercise['source'], number> = { strength: 4, yoga: 1.5, cardio: 1 };
+const MINUTES_PER: Record<Exercise['source'], number> = { strength: 4, yoga: 1.5, cardio: 1, office: 1 };
 /** 估算消耗用的 MET 值 */
-const MET: Record<Exercise['source'], number> = { strength: 5, yoga: 2.5, cardio: 7 };
+const MET: Record<Exercise['source'], number> = { strength: 5, yoga: 2.5, cardio: 7, office: 2.3 };
 
 export interface PlanBlock {
   label: '熱身' | '主訓練' | '收操';

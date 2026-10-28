@@ -6,6 +6,8 @@ export const DATABASES = [
   { key: 'yoga', prefix: 'y', title: '體式名稱', databaseId: 'd36753cca9da4eee99bfe3638cbc6edb' },
   { key: 'cardio', prefix: 'c', title: '動作名稱', databaseId: 'ba310c08be884b01bac42fc1fe8bb0eb' },
   { key: 'side-effects', prefix: 'e', title: '副作用', databaseId: '36a23f3986434c4b911900648c1267e4', withBody: true },
+  // 辦公室小運動資料庫（與訓練菜單分開）
+  { key: 'office', prefix: 'o', title: '動作名稱', databaseId: '95679c8bbe7b4e48bee108cc2b194910' },
   // 飲食資料庫 › 食物清單：id 直接用「APP代號」欄位（例如 out_lunch_01）
   { key: 'foods', prefix: 'f', title: '食物名稱', databaseId: 'e70b6544a46b47fb99103d37fc9a4ed1', idProp: 'APP代號' },
 ];

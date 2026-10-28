@@ -62,6 +62,16 @@ export function Today() {
         )}
       </section>
 
+      <a className="card office-entry" href="#/office">
+        <span className="office-icon" aria-hidden>🪑</span>
+        <span className="grow">
+          <span className="eyebrow">久坐救星</span>
+          <span style={{ display: 'block', fontWeight: 900, fontSize: 18 }}>辦公室小運動</span>
+          <span className="muted">選時間和部位，3 分鐘就能放鬆肩頸</span>
+        </span>
+        <span aria-hidden style={{ fontSize: 22 }}>›</span>
+      </a>
+
       <WaterCard date={today} current={day.waterMl} />
 
       <a className="card flat row" href="#/care" style={{ color: 'inherit', textDecoration: 'none' }}>

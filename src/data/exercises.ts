@@ -5,6 +5,7 @@ import type { Difficulty, Exercise, ExerciseMedia } from '../types';
 import strengthRaw from './notion/strength.json';
 import yogaRaw from './notion/yoga.json';
 import cardioRaw from './notion/cardio.json';
+import officeRaw from './notion/office.json';
 
 interface Base { id: string; notionId?: string; 示範影片?: string }
 interface StrengthRow extends Base {
@@ -90,12 +91,40 @@ export const EXERCISES: Exercise[] = [
   ...(cardioRaw as CardioRow[]).map(fromCardio),
 ];
 
-export const EXERCISE_BY_ID: Record<string, Exercise> = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
+interface OfficeRow extends Base {
+  動作名稱: string; 訓練部位: string[]; 主要肌群?: string; 動作要點?: string; 常見錯誤?: string;
+  建議次數組數?: string; 難度?: string; 器材?: string;
+}
+
+const fromOffice = (r: OfficeRow): Exercise => ({
+  id: r.id,
+  notionId: r.notionId,
+  media: toMedia(r.示範影片),
+  source: 'office',
+  name: r.動作名稱,
+  bodyParts: r.訓練部位 ?? [],
+  difficulty: (r.難度 as Difficulty) || '新手',
+  equipment: r.器材 || '徒手',
+  muscles: r.主要肌群,
+  cues: r.動作要點 ?? '',
+  cautions: r.常見錯誤,
+  dose: r.建議次數組數 ?? '30 秒',
+  jumping: false,
+  periodFriendly: true,
+  tags: ['辦公室', r.器材 || '徒手'],
+});
+
+/** 辦公室小運動：獨立的動作清單，不放進 EXERCISES（訓練菜單與動作圖庫不會出現） */
+export const OFFICE_EXERCISES: Exercise[] = (officeRaw as OfficeRow[]).filter((r) => r.動作名稱).map(fromOffice);
+
+/** 用 id 找動作（含辦公室小運動，給詳情頁用） */
+export const EXERCISE_BY_ID: Record<string, Exercise> = Object.fromEntries([...EXERCISES, ...OFFICE_EXERCISES].map((e) => [e.id, e]));
 
 export const SOURCE_LABEL: Record<Exercise['source'], string> = {
   strength: '重訓',
   yoga: '瑜珈',
   cardio: '有氧',
+  office: '辦公室小運動',
 };
 
 /** 人體圖可點選的肌群（模組 5-1） */

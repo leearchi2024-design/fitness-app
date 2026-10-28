@@ -11,6 +11,8 @@ export type Route =
   | { name: 'food' }
   | { name: 'me' }
   | { name: 'care' }
+  | { name: 'office' }
+  | { name: 'officeSession'; seed: string }
   | { name: 'careDetail'; id: string };
 
 export function parseHash(hash: string): Route {
@@ -22,6 +24,7 @@ export function parseHash(hash: string): Route {
     case 'calendar': return { name: 'calendar', date: b };
     case 'food': return { name: 'food' };
     case 'me': return { name: 'me' };
+    case 'office': return b === 'go' ? { name: 'officeSession', seed: decodeURIComponent(c ?? '') || 'office' } : { name: 'office' };
     case 'care': return b ? { name: 'careDetail', id: b } : { name: 'care' };
     default: return { name: 'today' };
   }

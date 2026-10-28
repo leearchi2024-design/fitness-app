@@ -41,7 +41,8 @@ export interface UserProfile {
 }
 
 // 模組五：動作圖庫（統一格式，由三個 Notion 資料庫轉換而來）
-export type ExerciseSource = 'strength' | 'yoga' | 'cardio';
+/** office＝辦公室小運動（獨立功能，不會排進訓練菜單） */
+export type ExerciseSource = 'strength' | 'yoga' | 'cardio' | 'office';
 export type Difficulty = '新手' | '中階' | '進階';
 
 export interface Exercise {
@@ -128,6 +129,8 @@ export interface AppSettings {
   voice?: boolean;
   /** 跟練提示音（嗶聲） */
   beep?: boolean;
+  /** 辦公室小運動上次的選擇 */
+  office?: { minutes: number; parts: string[]; equipment: string[] };
 }
 
 export interface AppData {

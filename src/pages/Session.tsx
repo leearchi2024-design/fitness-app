@@ -23,12 +23,46 @@ export function workSeconds(e: Exercise): number {
 type Phase = 'ready' | 'countdown' | 'work' | 'rest' | 'done';
 export const COUNTDOWN_SEC = 3;
 
+export interface RunStep {
+  e: Exercise;
+  /** 畫面上的小標籤（熱身／主訓練／收操／辦公室） */
+  block: string;
+  sec: number;
+  side?: string;
+}
+
+export interface RunPlan {
+  title: string;
+  steps: RunStep[];
+  restSec: number;
+  minutes: number;
+  kcal: number;
+}
+
+/** 今日訓練菜單的跟練 */
 export function Session() {
   const { plan } = usePlanFor();
+  const run = useMemo<RunPlan | null>(
+    () =>
+      plan && {
+        title: plan.title,
+        steps: plan.blocks.flatMap((b) => b.exercises.map((e) => ({ e, block: b.label, sec: workSeconds(e) }))),
+        restSec: REST_SEC,
+        minutes: plan.minutes,
+        kcal: plan.kcal,
+      },
+    [plan],
+  );
+  return <SessionRunner plan={run} exitPath="/train" />;
+}
+
+/** 跟練畫面（訓練菜單與辦公室小運動共用） */
+export function SessionRunner({ plan, exitPath }: { plan: RunPlan | null; exitPath: string }) {
   const { data, addWorkout, setSettings } = useStore();
   const voiceOn = data.settings.voice !== false;
   const beepOn = data.settings.beep !== false;
-  const steps = useMemo(() => plan?.blocks.flatMap((b) => b.exercises.map((e) => ({ e, block: b.label }))) ?? [], [plan]);
+  const steps = plan?.steps ?? [];
+  const REST = plan?.restSec ?? REST_SEC;
 
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<Phase>('ready');
@@ -57,7 +91,7 @@ export function Session() {
       if (left <= 3) {
         ding('tick');
         say(zhNumber(left));
-      } else if (phase === 'work' && left === 10 && workSeconds(steps[i].e) >= 25) {
+      } else if (phase === 'work' && left === 10 && steps[i].sec >= 25) {
         say('還剩 10 秒');
       }
       return;
@@ -68,10 +102,12 @@ export function Session() {
     } else if (phase === 'work') {
       if (i >= steps.length - 1) finish();
       else {
+        const nx = steps[i + 1];
         setPhase('rest');
-        setLeft(REST_SEC);
+        setLeft(REST);
         ding('rest');
-        say(`休息 ${REST_SEC} 秒，下一個：${steps[i + 1].e.name}`);
+        if (nx.e.id === steps[i].e.id && nx.side) say(`換${nx.side}`);
+        else say(REST >= 10 ? `休息 ${REST} 秒，下一個：${nx.e.name}` : `下一個：${nx.e.name}`);
       }
     } else {
       jump(i + 1);
@@ -96,12 +132,16 @@ export function Session() {
   function jump(n: number) {
     if (n < 0) return;
     if (n >= steps.length) return finish();
-    const sec = workSeconds(steps[n].e);
+    const st = steps[n];
+    const sec = st.sec;
     setI(n);
     setPhase('work');
     setLeft(sec);
     ding('go');
-    say(`${n === 0 ? '開始，' : ''}${steps[n].e.name}，${steps[n].e.source === 'strength' ? steps[n].e.dose.replace(/×/g, '').replace(/[–~-]/g, '到') : spokenDuration(sec)}`);
+    const sameAsPrev = n > 0 && steps[n - 1].e.id === st.e.id;
+    const amount = st.e.source === 'strength' ? st.e.dose.replace(/×/g, '').replace(/[–~-]/g, '到') : spokenDuration(sec);
+    if (sameAsPrev && st.side) say(`${st.side}，${spokenDuration(sec)}`);
+    else say(`${n === 0 ? '開始，' : ''}${st.e.name}${st.side ? `，先做${st.side}` : ''}，${amount}`);
   }
 
   const togglePause = () => {
@@ -110,7 +150,7 @@ export function Session() {
   };
 
   if (!plan || !steps.length) {
-    return <div className="page"><p className="empty">目前沒有菜單。</p><button className="btn" onClick={() => go('/train')}>回到跟練</button></div>;
+    return <div className="page"><p className="empty">目前沒有菜單。</p><button className="btn" onClick={() => go(exitPath)}>返回</button></div>;
   }
 
   const cur = steps[i];
@@ -121,12 +161,12 @@ export function Session() {
     return (
       <div className="session">
         <header>
-          <button className="link" style={{ color: 'inherit' }} onClick={() => go('/train')}>✕ 返回</button>
+          <button className="link" style={{ color: 'inherit' }} onClick={() => go(exitPath)}>✕ 返回</button>
         </header>
         <main>
           <span className="eyebrow" style={{ color: 'var(--dot)' }}>準備好了嗎？</span>
           <h1 style={{ fontSize: 30 }}>{plan.title}</h1>
-          <p style={{ color: 'var(--dot)' }}>{steps.length} 個動作・約 {plan.minutes} 分鐘・約 {plan.kcal} 大卡</p>
+          <p style={{ color: 'var(--dot)' }}>{new Set(steps.map((s) => s.e.id)).size} 個動作・約 {plan.minutes} 分鐘・約 {plan.kcal} 大卡</p>
           <p style={{ color: 'var(--dot)' }}>第一個：{steps[0].e.name}</p>
           <div className="sound-toggles">
             <button className="sound-toggle" aria-pressed={voiceOn} onClick={() => setSettings({ voice: !voiceOn })}>
@@ -191,7 +231,7 @@ export function Session() {
           <button
             className="btn primary block"
             onClick={() => {
-              addWorkout({ date: toKey(), title: plan.title, minutes, kcal, feeling, exerciseIds: steps.map((s) => s.e.id) });
+              addWorkout({ date: toKey(), title: plan.title, minutes, kcal, feeling, exerciseIds: [...new Set(steps.map((s) => s.e.id))] });
               go('/today');
             }}
           >
@@ -206,7 +246,7 @@ export function Session() {
     <div className="session">
       <header className="stack">
         <div className="between">
-          <button className="link" style={{ color: 'inherit' }} onClick={() => go('/train')}>✕ 結束</button>
+          <button className="link" style={{ color: 'inherit' }} onClick={() => go(exitPath)}>✕ 結束</button>
           <span className="num">{i + 1} / {steps.length}</span>
         </div>
         <div className="bar"><i style={{ width: `${progress * 100}%` }} /></div>
@@ -217,12 +257,13 @@ export function Session() {
           <>
             <ExerciseMediaView key={cur.e.id} exercise={cur.e} variant="session" />
             <h1 style={{ fontSize: 30 }}>{cur.e.name}</h1>
+            {cur.side && <span className="tag fill">{cur.side}</span>}
             <p style={{ color: 'var(--dot)', maxWidth: 360 }}>{cur.e.cues}</p>
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: 26 }}>喘口氣</h1>
-            <p style={{ color: 'var(--dot)' }}>下一個：{nextStep?.e.name}</p>
+            <h1 style={{ fontSize: 26 }}>{nextStep && nextStep.e.id === cur.e.id && nextStep.side ? `換${nextStep.side}` : REST >= 10 ? '喘口氣' : '準備下一個'}</h1>
+            <p style={{ color: 'var(--dot)' }}>下一個：{nextStep?.e.name}{nextStep?.side ? `（${nextStep.side}）` : ''}</p>
           </>
         )}
         <div className="count" aria-live="polite">{Math.max(0, left)}</div>

@@ -78,7 +78,7 @@ export function Me() {
         )}
       </section>
 
-      <p className="muted" style={{ textAlign: 'center' }}>v0.6・第一階段 MVP</p>
+      <p className="muted" style={{ textAlign: 'center' }}>v0.7・第一階段 MVP</p>
     </div>
   );
 }

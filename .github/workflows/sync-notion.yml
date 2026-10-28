@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: '只同步某個資料庫（strength / yoga / cardio，留空 = 全部）'
+        description: '只同步某個資料庫（strength / yoga / cardio / side-effects / office / foods，留空 = 全部）'
         required: false
         default: ''
 

@@ -21,6 +21,15 @@ export function Train({ pick, replaceId }: { pick?: boolean; replaceId?: string 
         <button className="chip" role="tab" aria-pressed={tab === 'library'} onClick={() => setTab('library')}>動作圖庫</button>
       </div>
       {tab === 'plan' ? <PlanView /> : <Library />}
+      <a className="card office-entry" href="#/office">
+        <span className="office-icon" aria-hidden>🪑</span>
+        <span className="grow">
+          <span className="eyebrow">久坐救星</span>
+          <span style={{ display: 'block', fontWeight: 900, fontSize: 18 }}>辦公室小運動</span>
+          <span className="muted">選時間和部位，3 分鐘就能放鬆肩頸</span>
+        </span>
+        <span aria-hidden style={{ fontSize: 22 }}>›</span>
+      </a>
     </div>
   );
 }

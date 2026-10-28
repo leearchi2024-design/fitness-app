@@ -5,6 +5,7 @@ import { ExerciseDetail } from './pages/ExerciseDetail';
 import { Food } from './pages/Food';
 import { Me } from './pages/Me';
 import { Session } from './pages/Session';
+import { Office, OfficeSession } from './pages/Office';
 import { SideEffectDetail, SideEffectList } from './pages/SideEffects';
 import { Today } from './pages/Today';
 import { Train } from './pages/Train';
@@ -20,6 +21,7 @@ export function App() {
 
   // 跟練模式為全螢幕，不顯示導覽列
   if (route.name === 'session') return <Session />;
+  if (route.name === 'officeSession') return <OfficeSession seed={route.seed} />;
 
   return (
     <div className="app">
@@ -29,6 +31,7 @@ export function App() {
       {route.name === 'calendar' && <Calendar date={route.date} />}
       {route.name === 'food' && <Food />}
       {route.name === 'me' && <Me />}
+      {route.name === 'office' && <Office />}
       {route.name === 'care' && <SideEffectList />}
       {route.name === 'careDetail' && <SideEffectDetail id={route.id} />}
       <TabBar route={route} />

@@ -4,8 +4,8 @@
 //   只同步重訓：NOTION_TOKEN=secret_xxx npm run sync -- strength
 //
 // 會更新：
-//   src/data/notion/{strength,yoga,cardio,side-effects,foods}.json   （欄位名稱與 Notion 相同；副作用含頁面內文；foods＝飲食資料庫）
-//   public/media/{strength,yoga,cardio}/<id>.<副檔名>   （示範影片／動畫）
+//   src/data/notion/{strength,yoga,cardio,side-effects,office,foods}.json   （欄位名稱與 Notion 相同；副作用含頁面內文；foods＝飲食資料庫）
+//   public/media/{strength,yoga,cardio,office}/<id>.<副檔名>   （示範影片／動畫）
 // 需要 Node.js 18 以上，不需另外安裝套件。
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

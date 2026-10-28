@@ -396,3 +396,14 @@ hr.soft { border: 0; border-top: 1.5px dashed var(--ink-2); margin: 14px 0 2px; 
 }
 .cal button { position: relative; }
 .lg-plan { background: transparent; border: 1.5px dashed var(--accent); }
+
+/* ===== v0.7：辦公室小運動 ===== */
+.office-parts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.office-parts .choice { padding: 10px 12px; min-height: 64px; }
+.office-thumb { background: #fffdf8; }
+.office-plan .btn.sm { background: #fffdf8; }
+.office-entry { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.office-entry .office-icon {
+  flex: none; width: 52px; height: 52px; border: 2px solid var(--ink); border-radius: 14px; display: grid; place-items: center;
+  font-size: 26px; background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px); background-size: 7px 7px; background-color: #fffdf8;
+}
