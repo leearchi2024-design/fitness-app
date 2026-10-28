@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 export type Route =
   | { name: 'today' }
-  | { name: 'train' }
+  | { name: 'train'; pick?: boolean; replaceId?: string }
   | { name: 'exercise'; id: string }
   | { name: 'session' }
   | { name: 'calendar'; date?: string }
@@ -14,9 +14,9 @@ export type Route =
   | { name: 'careDetail'; id: string };
 
 export function parseHash(hash: string): Route {
-  const [, a, b] = hash.replace(/^#/, '').split('/');
+  const [, a, b, c] = hash.replace(/^#/, '').split('/');
   switch (a) {
-    case 'train': return { name: 'train' };
+    case 'train': return b === 'pick' ? { name: 'train', pick: true, replaceId: c || undefined } : { name: 'train' };
     case 'exercise': return b ? { name: 'exercise', id: b } : { name: 'train' };
     case 'session': return { name: 'session' };
     case 'calendar': return { name: 'calendar', date: b };

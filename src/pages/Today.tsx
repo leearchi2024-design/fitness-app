@@ -1,12 +1,13 @@
 // ===== 分頁「今日」：今天的跟練菜單、熱量剩餘、喝水與打卡進度（模組一、二、五） =====
 import { CalorieRing } from '../components/CalorieRing';
 import { usePlanFor } from '../features/plan/useTodayPlan';
+import { WaterCard } from '../features/water/WaterCard';
 import { toKey, WEEKDAY } from '../lib/date';
 import { go } from '../router';
 import { useDay, useStore } from '../store/AppStore';
 
 export function Today() {
-  const { data, summary, addWater } = useStore();
+  const { data, summary } = useStore();
   const today = toKey();
   const day = useDay(today);
   const { plan, training } = usePlanFor(today);
@@ -61,20 +62,7 @@ export function Today() {
         )}
       </section>
 
-      <section className="card">
-        <h2>
-          喝水
-          <span className="num" style={{ fontSize: 15 }}>{day.waterMl} / {summary.waterMl} ml</span>
-        </h2>
-        <div className="bar accent" style={{ marginBottom: 12 }}>
-          <i style={{ width: `${Math.min(100, (day.waterMl / summary.waterMl) * 100)}%` }} />
-        </div>
-        <div className="row">
-          <button className="btn sm" onClick={() => addWater(250)}>+250 ml</button>
-          <button className="btn sm" onClick={() => addWater(500)}>+500 ml</button>
-          <button className="btn sm" onClick={() => addWater(-250)}>−250</button>
-        </div>
-      </section>
+      <WaterCard date={today} current={day.waterMl} />
 
       <a className="card flat row" href="#/care" style={{ color: 'inherit', textDecoration: 'none' }}>
         <span className="grow">

@@ -6,6 +6,7 @@ import { buildWorkoutPlan, optionsFromProfile, WEEK_SCHEDULE } from '../../lib/w
 import { toKey } from '../../lib/date';
 import { useStore } from '../../store/AppStore';
 import { BackupPanel } from '../backup/BackupPanel';
+import { NumInput } from '../../components/NumInput';
 import type { Equipment, UserProfile, WorkoutType } from '../../types';
 import {
   ACTIVITIES, EQUIPMENTS, GENDERS, GOAL_LABEL, goalOptions, LEVELS, MINUTES, MODE_LABEL, WORKOUT_TYPES,
@@ -46,7 +47,7 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
     types: p.workoutTypes.length > 0,
     level: true,
     habit: true,
-    body: p.body.heightCm > 100 && p.body.weightKg > 25 && !!p.body.birthDate,
+    body: bodyProblem(p) === null,
     preview: true,
   };
 
@@ -163,8 +164,8 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
       {step === 'body' && (
         <Question title="輸入身體資料" hint="用來計算 BMI、基礎代謝與每日建議熱量。">
           <div className="grid2">
-            <NumField label="身高（cm）" value={p.body.heightCm} step={1} onChange={(v) => patchBody({ heightCm: v })} />
-            <NumField label="體重（kg）" value={p.body.weightKg} step={0.1} onChange={(v) => patchBody({ weightKg: v })} />
+            <NumField label="身高（cm）" value={p.body.heightCm} decimal={false} onChange={(v) => patchBody({ heightCm: v ?? 0 })} />
+            <NumField label="體重（kg）" value={p.body.weightKg} onChange={(v) => patchBody({ weightKg: v ?? 0 })} />
           </div>
           <div className="field">
             <label htmlFor="bd">生日</label>
@@ -179,13 +180,13 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
             ))}
           </div>
           <div className="grid2">
-            <NumField label="目標體重（選填）" value={p.body.targetWeightKg} step={0.1} onChange={(v) => patchBody({ targetWeightKg: v || undefined })} />
-            <NumField label="體脂率 %（選填）" value={p.body.bodyFatPct} step={0.1} onChange={(v) => patchBody({ bodyFatPct: v || undefined })} />
+            <NumField label="目標體重（選填）" value={p.body.targetWeightKg} onChange={(v) => patchBody({ targetWeightKg: v || undefined })} />
+            <NumField label="體脂率 %（選填）" value={p.body.bodyFatPct} onChange={(v) => patchBody({ bodyFatPct: v || undefined })} />
           </div>
           {p.gender === 'female' && (
             <div className="grid2">
-              <NumField label="週期天數（選填）" value={p.body.cycle?.lengthDays} step={1}
-                onChange={(v) => patchBody({ cycle: v ? { lengthDays: v, lastStart: p.body.cycle?.lastStart ?? toKey() } : undefined })} />
+              <NumField label="週期天數（選填）" value={p.body.cycle?.lengthDays} decimal={false}
+                onChange={(v) => patchBody({ cycle: { lengthDays: v ?? 0, lastStart: p.body.cycle?.lastStart ?? toKey() } })} />
               <div className="field">
                 <label htmlFor="cyc">上次開始日</label>
                 <input id="cyc" className="input" type="date" value={p.body.cycle?.lastStart ?? ''}
@@ -193,6 +194,7 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
               </div>
             </div>
           )}
+          {bodyProblem(p) && <p className="warn-text" role="status">{bodyProblem(p)}</p>}
           <p className="muted">未滿 18 歲、懷孕或有特殊疾病者，請先諮詢醫師。</p>
         </Question>
       )}
@@ -284,14 +286,25 @@ function Question({ title, hint, children }: { title: string; hint?: string; chi
   );
 }
 
-function NumField({ label, value, step, onChange }: { label: string; value?: number; step: number; onChange: (v: number) => void }) {
+function NumField({ label, value, decimal = true, onChange }: { label: string; value?: number; decimal?: boolean; onChange: (v: number | undefined) => void }) {
   return (
     <div className="field">
       <label>{label}</label>
-      <input className="input num" type="number" inputMode="decimal" step={step} value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? 0 : +e.target.value)} />
+      <NumInput value={value} decimal={decimal} onChange={onChange} aria-label={label} />
     </div>
   );
+}
+
+/** 身體資料哪裡還沒填好（null = 可以下一步） */
+export function bodyProblem(p: UserProfile): string | null {
+  const b = p.body;
+  if (!(b.heightCm >= 100 && b.heightCm <= 250)) return '請輸入身高（100–250 cm）。';
+  if (!(b.weightKg >= 25 && b.weightKg <= 300)) return '請輸入體重（25–300 kg）。';
+  if (!b.birthDate) return '請選擇生日。';
+  if (b.bodyFatPct !== undefined && !(b.bodyFatPct >= 3 && b.bodyFatPct <= 70)) return '體脂率請填 3–70 之間，或留空。';
+  const len = b.cycle?.lengthDays;
+  if (p.gender === 'female' && len && !(len >= 15 && len <= 60)) return '週期天數請填 15–60 天，或留空（預設 28 天）。';
+  return null;
 }
 
 function toggle<T>(list: T[], v: T): T[] {

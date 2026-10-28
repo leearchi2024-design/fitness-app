@@ -1,7 +1,9 @@
 // ===== 分頁「日曆」：月曆、每日紀錄、身體變化週報（模組三） =====
 import { useMemo, useState } from 'react';
+import { NumInput } from '../components/NumInput';
 import { Sticker } from '../components/Sticker';
-import { fromKey, monthGrid, toKey } from '../lib/date';
+import { monthGrid, fromKey, toKey } from '../lib/date';
+import { cycleInfo, predictedPeriodDays } from '../lib/period';
 import { go } from '../router';
 import { useDay, useStore } from '../store/AppStore';
 import type { AppData, BodyLog, MealSlot } from '../types';
@@ -15,7 +17,15 @@ export function Calendar({ date }: { date?: string }) {
   const selected = date ?? toKey();
   const sel = fromKey(selected);
   const [view, setView] = useState({ y: sel.getFullYear(), m: sel.getMonth() });
-  const cells = useMemo(() => monthGrid(view.y, view.m), [view]);
+  // 只顯示這個月：其他月份的格子留白，最後整排都是下個月的就不畫
+  const cells = useMemo(() => {
+    const all = monthGrid(view.y, view.m);
+    const lastIdx = all.reduce((acc, d, i) => (d.getMonth() === view.m ? i : acc), 0);
+    const rows = Math.ceil((lastIdx + 1) / 7);
+    return all.slice(0, rows * 7);
+  }, [view]);
+  const female = data.profile?.gender === 'female';
+  const predicted = useMemo(() => predictedPeriodDays(data), [data]);
   const marks = useMemo(() => dayMarks(data), [data]);
   const stickers = useMemo(() => {
     const m: Record<string, string[]> = {};
@@ -40,14 +50,16 @@ export function Calendar({ date }: { date?: string }) {
           {['一', '二', '三', '四', '五', '六', '日'].map((d) => <span key={d} className="dow">{d}</span>)}
           {cells.map((d) => {
             const k = toKey(d);
+            if (d.getMonth() !== view.m) return <span key={k} className="cal-blank" aria-hidden />;
             const mk = marks[k];
             const st = stickers[k];
+            const period = female && data.days[k]?.period ? 'period' : female && predicted.has(k) ? 'period-pred' : '';
             return (
               <button
                 key={k}
-                className={`${d.getMonth() !== view.m ? 'out' : ''} ${k === todayKey ? 'today' : ''} ${st ? 'has-sticker' : ''}`}
+                className={`${k === todayKey ? 'today' : ''} ${st ? 'has-sticker' : ''} ${period}`}
                 aria-pressed={k === selected}
-                aria-label={`${d.getMonth() + 1} 月 ${d.getDate()} 日${st ? `，${st.length} 張飲食貼紙` : ''}`}
+                aria-label={`${d.getMonth() + 1} 月 ${d.getDate()} 日${st ? `，${st.length} 張飲食貼紙` : ''}${period === 'period' ? '，生理期' : period ? '，預估生理期' : ''}`}
                 onClick={() => go(`/calendar/${k}`)}
               >
                 {d.getDate()}
@@ -61,7 +73,6 @@ export function Calendar({ date }: { date?: string }) {
                   {mk?.w && <i className="w" />}
                   {mk?.f && !st && <i className="f" />}
                   {mk?.b && <i className="b" />}
-                  {mk?.p && <i className="p" />}
                 </span>
               </button>
             );
@@ -71,7 +82,8 @@ export function Calendar({ date }: { date?: string }) {
           <span><i style={{ background: 'var(--accent)' }} />運動完成</span>
           <span><i style={{ background: 'var(--ok)' }} />飲食已記錄（拍照的會顯示貼紙）</span>
           <span><i style={{ background: 'var(--dot)' }} />量了體重</span>
-          {data.profile?.body.cycle && <span><i style={{ background: '#d6336c' }} />生理期（預估）</span>}
+          {female && <span><i className="lg-period" />生理期</span>}
+          {female && <span><i className="lg-period-pred" />預估</span>}
         </div>
       </section>
 
@@ -83,7 +95,8 @@ export function Calendar({ date }: { date?: string }) {
 
 function DayDetail({ date }: { date: string }) {
   const day = useDay(date);
-  const { saveBodyLog } = useStore();
+  const { data, saveBodyLog, setPeriod } = useStore();
+  const female = data.profile?.gender === 'female';
   const [form, setForm] = useState<BodyLog>(day.body ?? { date });
   const d = fromKey(date);
 
@@ -118,6 +131,8 @@ function DayDetail({ date }: { date: string }) {
             <p key={m.id}><b>{m.label}</b> <span className="muted">{items.length ? items.map((f) => f.name).join('、') : '—'}</span></p>
           );
         })}
+
+        {female && <PeriodToggle date={date} on={day.period} onChange={(v) => setPeriod(date, v)} />}
 
         <span className="eyebrow">身體</span>
         <div className="grid2">
@@ -190,27 +205,45 @@ function Num({ label, v, on }: { label: string; v?: number; on: (v: number | und
   return (
     <div className="field">
       <label>{label}</label>
-      <input className="input num" type="number" step="0.1" inputMode="decimal" value={v ?? ''}
-        onChange={(e) => on(e.target.value === '' ? undefined : +e.target.value)} />
+      <NumInput value={v} onChange={on} aria-label={label} />
+    </div>
+  );
+}
+
+function PeriodToggle({ date, on, onChange }: { date: string; on: boolean; onChange: (v: boolean) => void }) {
+  const { data } = useStore();
+  const info = useMemo(() => cycleInfo(data), [data]);
+  const future = date > toKey();
+  const next = info.nextStart ? fromKey(info.nextStart) : null;
+  return (
+    <div className="period-box">
+      <span className="eyebrow">生理期</span>
+      <button
+        className={`period-toggle ${on ? 'on' : ''}`}
+        aria-pressed={on}
+        disabled={future}
+        onClick={() => onChange(!on)}
+      >
+        <span className="period-check" aria-hidden>{on ? '✓' : ''}</span>
+        <span className="grow">
+          <b>這天有生理期</b>
+          <small>{future ? '還沒到的日子不能標記' : on ? '已記錄，再點一次可取消' : '點一下記錄，日曆會顯示實心標記'}</small>
+        </span>
+      </button>
+      {next && (
+        <p className="muted" style={{ marginTop: 6 }}>
+          下次預估 {next.getMonth() + 1}/{next.getDate()} 開始・週期 {info.cycleLength} 天{info.learned ? '（依你的紀錄計算）' : ''}・約 {info.periodLength} 天
+        </p>
+      )}
     </div>
   );
 }
 
 function dayMarks(data: AppData) {
-  const m: Record<string, { w?: boolean; f?: boolean; b?: boolean; p?: boolean }> = {};
-  const set = (k: string, key: 'w' | 'f' | 'b' | 'p') => ((m[k] ??= {})[key] = true);
+  const m: Record<string, { w?: boolean; f?: boolean; b?: boolean }> = {};
+  const set = (k: string, key: 'w' | 'f' | 'b') => ((m[k] ??= {})[key] = true);
   data.workouts.forEach((w) => set(w.date, 'w'));
   data.foods.forEach((f) => set(f.date, 'f'));
   data.bodyLogs.forEach((b) => b.weightKg && set(b.date, 'b'));
-  // 生理期：僅選女性且有填週期才顯示，依上次開始日與週期天數往前後推算（每次標 5 天）
-  const cycle = data.profile?.gender === 'female' ? data.profile.body.cycle : undefined;
-  if (cycle?.lastStart && cycle.lengthDays > 0) {
-    const start = fromKey(cycle.lastStart);
-    for (let n = -3; n <= 6; n++) {
-      for (let d = 0; d < 5; d++) {
-        set(toKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() + n * cycle.lengthDays + d)), 'p');
-      }
-    }
-  }
   return m;
 }

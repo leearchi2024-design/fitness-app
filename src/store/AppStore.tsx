@@ -5,7 +5,7 @@ import { toKey, uid } from '../lib/date';
 import { requestPersistentStorage } from '../lib/backup';
 import { clearPhotos, deletePhoto } from '../lib/photoStore';
 import { emptyData, localStore } from '../lib/storage';
-import type { AppData, BodyLog, FoodEntry, UserProfile, WorkoutLog } from '../types';
+import type { AppData, AppSettings, BodyLog, FoodEntry, PlanEdit, UserProfile, WorkoutLog } from '../types';
 
 interface Store {
   data: AppData;
@@ -18,6 +18,12 @@ interface Store {
   saveBodyLog(b: BodyLog): void;
   addWater(ml: number, date?: string): void;
   setAddBack(v: boolean): void;
+  /** 更新設定（喝水目標、跟練語音等） */
+  setSettings(patch: Partial<AppSettings>): void;
+  /** 標記／取消某天的生理期 */
+  setPeriod(date: string, on: boolean): void;
+  /** 調整某天菜單 */
+  editPlan(date: string, fn: (e: PlanEdit) => PlanEdit): void;
   reset(): void;
   /** 從備份還原：整份取代目前資料 */
   replaceAll(data: AppData): void;
@@ -71,12 +77,39 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     (ml: number, date = toKey()) =>
       setData((d) => ({
         ...d,
-        days: { ...d.days, [date]: { waterMl: Math.max(0, (d.days[date]?.waterMl ?? 0) + ml) } },
+        days: { ...d.days, [date]: { ...d.days[date], waterMl: Math.max(0, (d.days[date]?.waterMl ?? 0) + ml) } },
       })),
     [],
   );
   const setAddBack = useCallback(
     (v: boolean) => setData((d) => ({ ...d, settings: { ...d.settings, addBackExerciseKcal: v } })),
+    [],
+  );
+  const setSettings = useCallback(
+    (patch: Partial<AppSettings>) => setData((d) => ({ ...d, settings: { ...d.settings, ...patch } })),
+    [],
+  );
+  const setPeriod = useCallback(
+    (date: string, on: boolean) =>
+      setData((d) => {
+        const cur = d.days[date] ?? { waterMl: 0 };
+        const next = { ...cur };
+        if (on) next.period = true;
+        else delete next.period;
+        return { ...d, days: { ...d.days, [date]: next } };
+      }),
+    [],
+  );
+  const editPlan = useCallback(
+    (date: string, fn: (e: PlanEdit) => PlanEdit) =>
+      setData((d) => {
+        const cur = d.planEdits?.[date] ?? { removed: [], added: [] };
+        const next = fn(cur);
+        const planEdits = { ...d.planEdits };
+        if (!next.removed.length && !next.added.length) delete planEdits[date];
+        else planEdits[date] = next;
+        return { ...d, planEdits };
+      }),
     [],
   );
   const reset = useCallback(() => {
@@ -88,8 +121,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const replaceAll = useCallback((next: AppData) => setData(next), []);
 
   const value = useMemo(
-    () => ({ data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset, replaceAll }),
-    [data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset, replaceAll],
+    () => ({ data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, setSettings, setPeriod, editPlan, reset, replaceAll }),
+    [data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, setSettings, setPeriod, editPlan, reset, replaceAll],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -113,6 +146,7 @@ export function useDay(date: string) {
       protein: foods.reduce((s, f) => s + (f.proteinG ?? 0), 0),
       burned: workouts.reduce((s, w) => s + w.kcal, 0),
       waterMl: data.days[date]?.waterMl ?? 0,
+      period: !!data.days[date]?.period,
       body: data.bodyLogs.find((b) => b.date === date),
     };
   }, [data, date]);

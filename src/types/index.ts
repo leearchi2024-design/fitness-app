@@ -106,6 +106,26 @@ export interface BodyLog {
 
 export interface DayRecord {
   waterMl: number;
+  /** 使用者自己標記：這天有生理期 */
+  period?: boolean;
+}
+
+/** 使用者對某天菜單的調整：移除不喜歡的動作、從動作庫加入新動作 */
+export interface PlanEdit {
+  removed: string[];
+  added: string[];
+  /** 移除的動作 id → 換成的動作 id（顯示在原本的位置） */
+  replace?: Record<string, string>;
+}
+
+export interface AppSettings {
+  addBackExerciseKcal: boolean;
+  /** 自訂每日喝水目標（ml）；沒填就用體重 × 30 */
+  waterTargetMl?: number;
+  /** 跟練語音（倒數、動作名稱） */
+  voice?: boolean;
+  /** 跟練提示音（嗶聲） */
+  beep?: boolean;
 }
 
 export interface AppData {
@@ -114,5 +134,7 @@ export interface AppData {
   workouts: WorkoutLog[];
   bodyLogs: BodyLog[];
   days: Record<string, DayRecord>;
-  settings: { addBackExerciseKcal: boolean };
+  /** 每天的菜單調整，key = YYYY-MM-DD */
+  planEdits: Record<string, PlanEdit>;
+  settings: AppSettings;
 }

@@ -46,6 +46,7 @@ export function parseBackup(text: string): BackupFile {
     workouts: Array.isArray(d.workouts) ? d.workouts : [],
     bodyLogs: Array.isArray(d.bodyLogs) ? d.bodyLogs : [],
     days: d.days && typeof d.days === 'object' ? d.days : {},
+    planEdits: d.planEdits && typeof d.planEdits === 'object' ? d.planEdits : {},
     settings: { ...base.settings, ...(d.settings ?? {}) },
   };
   const photos: Record<string, string> = {};

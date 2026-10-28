@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// ===== 從 Notion 同步動作資料與示範影片 =====
+// ===== 從 Notion 同步動作資料、示範影片、副作用與飲食資料庫 =====
 // 用法：NOTION_TOKEN=secret_xxx npm run sync
 //   只同步重訓：NOTION_TOKEN=secret_xxx npm run sync -- strength
 //
 // 會更新：
-//   src/data/notion/{strength,yoga,cardio,side-effects}.json   （欄位名稱與 Notion 相同；副作用含頁面內文）
+//   src/data/notion/{strength,yoga,cardio,side-effects,foods}.json   （欄位名稱與 Notion 相同；副作用含頁面內文；foods＝飲食資料庫）
 //   public/media/{strength,yoga,cardio}/<id>.<副檔名>   （示範影片／動畫）
 // 需要 Node.js 18 以上，不需另外安裝套件。
 import { mkdir, readFile, writeFile } from 'node:fs/promises';

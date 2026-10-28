@@ -132,4 +132,27 @@ describe('頁面內文轉換（副作用資料庫）', () => {
       expect(Array.isArray(r.常見族群)).toBe(true);
     }
   });
+
+  it('飲食資料庫：id 直接使用 Notion「APP代號」，新食物沒有代號時自動編號', () => {
+    const foods = DATABASES.find((d) => d.key === 'foods');
+    const page = (id, name, code) => ({
+      id: dashed(id), created_time: '2026-10-20T00:00:00.000Z', archived: false,
+      properties: {
+        食物名稱: { type: 'title', title: rt(name) },
+        APP代號: { type: 'rich_text', rich_text: code ? rt(code) : [] },
+        熱量: { type: 'number', number: 520 },
+        類型: { type: 'select', select: { name: '自煮' } },
+      },
+    });
+    const { rows } = buildRows([page('a'.repeat(32), '舒肥雞胸糙米餐', 'home_lunch_01'), page('b'.repeat(32), '新菜色', '')], [], foods);
+    expect(rows[0]).toMatchObject({ id: 'home_lunch_01', 食物名稱: '舒肥雞胸糙米餐', 熱量: 520 });
+    expect(rows[1].id).toBe('f01');
+  });
+
+  it('飲食資料庫 foods.json：每筆有名稱、熱量、代號不重複', () => {
+    const rows = JSON.parse(readFileSync(new URL('../src/data/notion/foods.json', import.meta.url), 'utf8'));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
+    for (const r of rows) expect(r.食物名稱 && typeof r.熱量 === 'number').toBeTruthy();
+  });
 });

@@ -18,6 +18,7 @@ export const emptyData = (): AppData => ({
   workouts: [],
   bodyLogs: [],
   days: {},
+  planEdits: {},
   settings: { addBackExerciseKcal: true },
 });
 
@@ -25,7 +26,10 @@ export const localStore: DataStore = {
   load() {
     try {
       const raw = localStorage.getItem(KEY);
-      return raw ? { ...emptyData(), ...JSON.parse(raw) } : emptyData();
+      if (!raw) return emptyData();
+      const base = emptyData();
+      const d = JSON.parse(raw);
+      return { ...base, ...d, settings: { ...base.settings, ...(d.settings ?? {}) } };
     } catch {
       return emptyData();
     }

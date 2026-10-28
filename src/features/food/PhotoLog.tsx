@@ -1,6 +1,6 @@
 // ===== 拍照記錄：拍照或選照片 → 做成圓形貼紙 → 填名稱與熱量 → 存到今天、貼到日曆 =====
 import { useEffect, useRef, useState } from 'react';
-import { FOODS } from '../../data/foods';
+import { FOOD_NAMES, foodByName } from '../../data/foods';
 import { uid } from '../../lib/date';
 import { deletePhoto, makeSticker, savePhoto } from '../../lib/photoStore';
 import type { FoodEntry, MealSlot } from '../../types';
@@ -50,7 +50,7 @@ export function PhotoLog({ date, meal, onSave }: Props) {
   // 輸入的名稱剛好是資料庫裡的食物時，自動帶入熱量與蛋白質
   function onName(v: string) {
     setName(v);
-    const hit = FOODS.find((f) => f.name === v);
+    const hit = foodByName(v);
     if (hit) {
       setKcal(String(hit.kcal));
       setProtein(String(hit.proteinG));
@@ -100,7 +100,7 @@ export function PhotoLog({ date, meal, onSave }: Props) {
           <img className="sticker sticker-pop" src={preview.url} alt="新的飲食貼紙" width={132} height={132} />
           <div className="stack" style={{ flex: 1, minWidth: 0 }}>
             <input className="input" list="food-names" placeholder="吃了什麼？（可留空）" value={name} onChange={(e) => onName(e.target.value)} aria-label="食物名稱" />
-            <datalist id="food-names">{FOODS.map((f) => <option key={f.name} value={f.name} />)}</datalist>
+            <datalist id="food-names">{FOOD_NAMES.map((n) => <option key={n} value={n} />)}</datalist>
             <div className="grid2">
               <input className="input num" type="number" inputMode="numeric" placeholder="熱量 大卡" value={kcal} onChange={(e) => setKcal(e.target.value)} aria-label="熱量（大卡）" />
               <input className="input num" type="number" inputMode="numeric" placeholder="蛋白質 g" value={protein} onChange={(e) => setProtein(e.target.value)} aria-label="蛋白質（克）" />

@@ -24,7 +24,7 @@ export function App() {
   return (
     <div className="app">
       {route.name === 'today' && <Today />}
-      {route.name === 'train' && <Train />}
+      {route.name === 'train' && <Train key={route.pick ? 'pick' : 'plan'} pick={route.pick} replaceId={route.replaceId} />}
       {route.name === 'exercise' && <ExerciseDetail id={route.id} />}
       {route.name === 'calendar' && <Calendar date={route.date} />}
       {route.name === 'food' && <Food />}
