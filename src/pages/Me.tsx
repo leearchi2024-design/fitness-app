@@ -4,6 +4,8 @@ import { GENDERS, GOAL_LABEL, LEVELS, MODE_LABEL, WORKOUT_TYPES } from '../featu
 import { Onboarding } from '../features/onboarding/Onboarding';
 import { BackupPanel } from '../features/backup/BackupPanel';
 import { useStore } from '../store/AppStore';
+import { trainingWeekdays } from '../lib/workout';
+import { WEEKDAYS_MON0 } from '../features/plan/WeekPicker';
 
 export function Me() {
   const { data, summary, setAddBack, reset } = useStore();
@@ -21,7 +23,7 @@ export function Me() {
         <span className="eyebrow">{GENDERS.find((g) => g.id === p.gender)?.label}・{summary.age} 歲・{LEVELS.find((l) => l.id === p.level)?.label}</span>
         <h2 style={{ fontSize: 22, margin: '4px 0 8px' }}>{p.goals.map((g) => GOAL_LABEL[g]).join('・')}</h2>
         <p className="muted">
-          {p.workoutTypes.map((t) => WORKOUT_TYPES.find((w) => w.id === t)?.label).join('、')}・每週 {p.daysPerWeek} 天・每次 {p.minutesPerSession} 分鐘
+          {p.workoutTypes.map((t) => WORKOUT_TYPES.find((w) => w.id === t)?.label).join('、')}・每週 {trainingWeekdays(p).length} 天（週{trainingWeekdays(p).map((d) => WEEKDAYS_MON0[d]).join('、')}）・每次 {p.minutesPerSession} 分鐘
         </p>
         <button className="btn sm" style={{ marginTop: 12 }} onClick={() => setEditing(true)}>調整目標與計畫</button>
       </section>
@@ -76,7 +78,7 @@ export function Me() {
         )}
       </section>
 
-      <p className="muted" style={{ textAlign: 'center' }}>v0.5・第一階段 MVP</p>
+      <p className="muted" style={{ textAlign: 'center' }}>v0.6・第一階段 MVP</p>
     </div>
   );
 }

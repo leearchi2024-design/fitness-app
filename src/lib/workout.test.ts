@@ -50,3 +50,22 @@ describe('模組 5-3：菜單推薦', () => {
     expect(plan.blocks.flatMap((b) => b.exercises).every((e) => e.periodFriendly)).toBe(true);
   });
 });
+
+describe('一週課表', () => {
+  it('自己安排的訓練日優先，沒有就依天數自動安排', async () => {
+    const { trainingWeekdays, isTrainingDay } = await import('./workout');
+    expect(trainingWeekdays({ daysPerWeek: 3 })).toEqual([0, 2, 4]);
+    expect(trainingWeekdays({ daysPerWeek: 2, trainingDays: [5, 1, 1] })).toEqual([1, 5]);
+    expect(isTrainingDay([1, 5], new Date(2026, 9, 27))).toBe(true); // 週二
+    expect(isTrainingDay([1, 5], new Date(2026, 9, 28))).toBe(false); // 週三
+  });
+
+  it('課表提醒：沒選、天天練、連續太多天', async () => {
+    const { scheduleNote } = await import('./workout');
+    expect(scheduleNote([])).toBe('至少選一天。');
+    expect(scheduleNote([0, 1, 2, 3, 4, 5, 6])).toContain('至少留 1 天休息');
+    expect(scheduleNote([0, 1, 2, 3])).toContain('連續練 4 天');
+    expect(scheduleNote([5, 6, 0, 1])).toContain('連續練 4 天'); // 跨週末也算
+    expect(scheduleNote([0, 2, 4])).toBeNull();
+  });
+});

@@ -63,9 +63,28 @@ export const WEEK_SCHEDULE: Record<number, number[]> = {
   6: [0, 1, 2, 3, 4, 5],
 };
 
-export function isTrainingDay(daysPerWeek: number, date: Date): boolean {
-  const weekdayMon0 = (date.getDay() + 6) % 7;
-  return (WEEK_SCHEDULE[daysPerWeek] ?? WEEK_SCHEDULE[3]).includes(weekdayMon0);
+/** 這個人的訓練日（0＝週一）：自己安排的優先，否則依每週天數自動安排 */
+export function trainingWeekdays(p: Pick<UserProfile, 'daysPerWeek' | 'trainingDays'>): number[] {
+  if (p.trainingDays?.length) return [...new Set(p.trainingDays)].filter((d) => d >= 0 && d <= 6).sort((a, b) => a - b);
+  return WEEK_SCHEDULE[p.daysPerWeek] ?? WEEK_SCHEDULE[3];
+}
+
+export function isTrainingDay(days: number[], date: Date): boolean {
+  return days.includes((date.getDay() + 6) % 7);
+}
+
+/** 課表提醒：連續練太多天、完全沒休息 */
+export function scheduleNote(days: number[]): string | null {
+  if (!days.length) return '至少選一天。';
+  if (days.length === 7) return '一週 7 天都練，建議至少留 1 天休息，讓肌肉恢復。';
+  const set = new Set(days);
+  let run = 0, maxRun = 0;
+  for (let i = 0; i < 14; i++) {
+    run = set.has(i % 7) ? run + 1 : 0;
+    maxRun = Math.max(maxRun, run);
+  }
+  if (maxRun >= 4) return `連續練 ${maxRun} 天，記得安排輕鬆的伸展或瑜珈日。`;
+  return null;
 }
 
 export function targetParts(goals: GoalId[]): string[] {

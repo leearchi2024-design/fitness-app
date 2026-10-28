@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { fromKey, toKey } from '../../lib/date';
 import { applyPlanEdit, type BlockView } from '../../lib/planEdit';
-import { buildWorkoutPlan, isTrainingDay, optionsFromProfile, type PlanOptions, type WorkoutPlan } from '../../lib/workout';
+import { buildWorkoutPlan, isTrainingDay, optionsFromProfile, trainingWeekdays, type PlanOptions, type WorkoutPlan } from '../../lib/workout';
 import { useStore } from '../../store/AppStore';
 
 export interface DayPlan {
@@ -31,7 +31,7 @@ export function usePlanFor(date: string = toKey()): DayPlan {
       plan,
       base,
       blocks,
-      training: isTrainingDay(p.daysPerWeek, fromKey(date)),
+      training: isTrainingDay(trainingWeekdays(p), fromKey(date)),
       edited: !!edit && (edit.removed.length > 0 || edit.added.length > 0),
       periodMode,
       opts,

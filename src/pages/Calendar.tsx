@@ -4,6 +4,8 @@ import { NumInput } from '../components/NumInput';
 import { Sticker } from '../components/Sticker';
 import { monthGrid, fromKey, toKey } from '../lib/date';
 import { cycleInfo, predictedPeriodDays } from '../lib/period';
+import { isTrainingDay, trainingWeekdays } from '../lib/workout';
+import { WeekPicker, WEEKDAYS_MON0 } from '../features/plan/WeekPicker';
 import { go } from '../router';
 import { useDay, useStore } from '../store/AppStore';
 import type { AppData, BodyLog, MealSlot } from '../types';
@@ -26,6 +28,7 @@ export function Calendar({ date }: { date?: string }) {
   }, [view]);
   const female = data.profile?.gender === 'female';
   const predicted = useMemo(() => predictedPeriodDays(data), [data]);
+  const weekdays = data.profile ? trainingWeekdays(data.profile) : [];
   const marks = useMemo(() => dayMarks(data), [data]);
   const stickers = useMemo(() => {
     const m: Record<string, string[]> = {};
@@ -54,12 +57,14 @@ export function Calendar({ date }: { date?: string }) {
             const mk = marks[k];
             const st = stickers[k];
             const period = female && data.days[k]?.period ? 'period' : female && predicted.has(k) ? 'period-pred' : '';
+            // 建議訓練日：今天以後、還沒練的課表日
+            const planDay = k >= todayKey && !mk?.w && isTrainingDay(weekdays, d) ? 'plan-day' : '';
             return (
               <button
                 key={k}
-                className={`${k === todayKey ? 'today' : ''} ${st ? 'has-sticker' : ''} ${period}`}
+                className={`${k === todayKey ? 'today' : ''} ${st ? 'has-sticker' : ''} ${period} ${planDay}`}
                 aria-pressed={k === selected}
-                aria-label={`${d.getMonth() + 1} 月 ${d.getDate()} 日${st ? `，${st.length} 張飲食貼紙` : ''}${period === 'period' ? '，生理期' : period ? '，預估生理期' : ''}`}
+                aria-label={`${d.getMonth() + 1} 月 ${d.getDate()} 日${st ? `，${st.length} 張飲食貼紙` : ''}${period === 'period' ? '，生理期' : period ? '，預估生理期' : ''}${planDay ? '，建議訓練日' : ''}`}
                 onClick={() => go(`/calendar/${k}`)}
               >
                 {d.getDate()}
@@ -79,6 +84,7 @@ export function Calendar({ date }: { date?: string }) {
           })}
         </div>
         <div className="legend" style={{ marginTop: 10 }}>
+          <span><i className="lg-plan" />建議訓練日</span>
           <span><i style={{ background: 'var(--accent)' }} />運動完成</span>
           <span><i style={{ background: 'var(--ok)' }} />飲食已記錄（拍照的會顯示貼紙）</span>
           <span><i style={{ background: 'var(--dot)' }} />量了體重</span>
@@ -88,6 +94,7 @@ export function Calendar({ date }: { date?: string }) {
       </section>
 
       <DayDetail key={selected} date={selected} />
+      <ScheduleCard />
       <WeeklyReport />
     </div>
   );
@@ -105,6 +112,12 @@ function DayDetail({ date }: { date: string }) {
       <h2>{d.getMonth() + 1} 月 {d.getDate()} 日</h2>
       <div className="stack">
         <span className="eyebrow">運動</span>
+        {!day.workouts.length && data.profile && date >= toKey() && isTrainingDay(trainingWeekdays(data.profile), d) && (
+          <div className="row wrap plan-hint">
+            <span className="tag fill">建議訓練日</span>
+            {date === toKey() && <button className="btn sm primary" onClick={() => go('/session')}>開始跟練</button>}
+          </div>
+        )}
         {day.workouts.length ? (
           day.workouts.map((w) => (
             <p key={w.id}><b>{w.title}</b> <span className="muted">・{w.minutes} 分・{w.kcal} 大卡</span></p>
@@ -145,6 +158,42 @@ function DayDetail({ date }: { date: string }) {
         </div>
         <button className="btn dark" onClick={() => saveBodyLog({ ...form, date })}>儲存身體紀錄</button>
       </div>
+    </section>
+  );
+}
+
+/** 我的一週課表：自己安排訓練日，日曆會標出建議訓練日 */
+function ScheduleCard() {
+  const { data, setProfile } = useStore();
+  const p = data.profile;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<number[]>([]);
+  if (!p) return null;
+  const days = trainingWeekdays(p);
+  return (
+    <section className="card">
+      <div className="between">
+        <h2>我的一週課表</h2>
+        {!editing && <button className="btn sm" onClick={() => { setDraft(days); setEditing(true); }}>調整</button>}
+      </div>
+      {editing ? (
+        <div className="stack" style={{ marginTop: 8 }}>
+          <WeekPicker days={draft} onChange={setDraft} />
+          <div className="row">
+            <button className="btn sm dark" disabled={!draft.length} onClick={() => { setProfile({ ...p, trainingDays: draft, daysPerWeek: draft.length }); setEditing(false); }}>儲存</button>
+            <button className="btn sm" onClick={() => setEditing(false)}>取消</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="week-picker" style={{ marginTop: 8 }} aria-label="一週課表">
+            {WEEKDAYS_MON0.map((l, i) => (
+              <span key={l} className="week-day" aria-pressed={days.includes(i)}><span>{l}</span><small>{days.includes(i) ? '練' : '休'}</small></span>
+            ))}
+          </div>
+          <p className="muted" style={{ marginTop: 8 }}>每週 {days.length} 天・每次 {p.minutesPerSession} 分鐘。日曆上虛線框的日子是建議訓練日。</p>
+        </>
+      )}
     </section>
   );
 }

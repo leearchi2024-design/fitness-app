@@ -32,7 +32,9 @@ export interface UserProfile {
   workoutTypes: WorkoutType[];
   level: Level;
   equipment: Equipment[];
-  daysPerWeek: number; // 2–6
+  daysPerWeek: number; // 1–7（有自訂課表時＝trainingDays 的天數）
+  /** 自己安排的訓練日：0＝週一 … 6＝週日；沒有設定時依 daysPerWeek 自動安排 */
+  trainingDays?: number[];
   minutesPerSession: SessionMinutes;
   reminderTime?: string; // HH:mm
   body: BodyProfile;

@@ -2,7 +2,8 @@
 // 歡迎 → 性別 → 目標 → 運動類型 → 程度與器材 → 運動習慣 → 身體資料 → 計畫預覽
 import { useMemo, useState, type ReactNode } from 'react';
 import { buildPlanSummary } from '../../lib/calc';
-import { buildWorkoutPlan, optionsFromProfile, WEEK_SCHEDULE } from '../../lib/workout';
+import { buildWorkoutPlan, optionsFromProfile, trainingWeekdays } from '../../lib/workout';
+import { WeekPicker } from '../plan/WeekPicker';
 import { toKey } from '../../lib/date';
 import { useStore } from '../../store/AppStore';
 import { BackupPanel } from '../backup/BackupPanel';
@@ -46,7 +47,7 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
     goals: p.goals.length > 0,
     types: p.workoutTypes.length > 0,
     level: true,
-    habit: true,
+    habit: trainingWeekdays(p).length > 0 && (p.trainingDays === undefined || p.trainingDays.length > 0),
     body: bodyProblem(p) === null,
     preview: true,
   };
@@ -142,10 +143,11 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
 
       {step === 'habit' && (
         <Question title="你的運動習慣？">
-          <div className="field">
-            <label>每週幾天：<span className="num">{p.daysPerWeek}</span> 天</label>
-            <input type="range" min={2} max={6} value={p.daysPerWeek} onChange={(e) => patch({ daysPerWeek: +e.target.value })} />
-          </div>
+          <span className="eyebrow">一週課表（點選要練的日子）</span>
+          <WeekPicker
+            days={p.trainingDays ?? trainingWeekdays(p)}
+            onChange={(d) => patch({ trainingDays: d, daysPerWeek: d.length })}
+          />
           <span className="eyebrow">每次時間</span>
           <div className="chips">
             {MINUTES.map((m) => (
@@ -185,7 +187,7 @@ export function Onboarding({ initial, onSaved }: { initial?: UserProfile | null;
           </div>
           {p.gender === 'female' && (
             <div className="grid2">
-              <NumField label="週期天數（選填）" value={p.body.cycle?.lengthDays} decimal={false}
+              <NumField label="生理期週期天數（選填）" value={p.body.cycle?.lengthDays} decimal={false}
                 onChange={(v) => patchBody({ cycle: { lengthDays: v ?? 0, lastStart: p.body.cycle?.lastStart ?? toKey() } })} />
               <div className="field">
                 <label htmlFor="cyc">上次開始日</label>
@@ -239,7 +241,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
 function Preview({ profile }: { profile: UserProfile }) {
   const s = useMemo(() => buildPlanSummary(profile), [profile]);
   const plan = useMemo(() => buildWorkoutPlan(optionsFromProfile(profile, toKey()), profile.body.weightKg), [profile]);
-  const days = WEEK_SCHEDULE[profile.daysPerWeek] ?? [];
+  const days = trainingWeekdays(profile);
   return (
     <>
       <div>
@@ -303,7 +305,7 @@ export function bodyProblem(p: UserProfile): string | null {
   if (!b.birthDate) return '請選擇生日。';
   if (b.bodyFatPct !== undefined && !(b.bodyFatPct >= 3 && b.bodyFatPct <= 70)) return '體脂率請填 3–70 之間，或留空。';
   const len = b.cycle?.lengthDays;
-  if (p.gender === 'female' && len && !(len >= 15 && len <= 60)) return '週期天數請填 15–60 天，或留空（預設 28 天）。';
+  if (p.gender === 'female' && len && !(len >= 15 && len <= 60)) return '生理期週期天數請填 15–60 天，或留空（預設 28 天）。';
   return null;
 }
 
