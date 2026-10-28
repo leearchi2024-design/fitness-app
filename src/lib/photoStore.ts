@@ -164,3 +164,16 @@ async function loadImage(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }
+
+// ===== 備份用 =====
+
+/** 取得單張貼紙的原始檔 */
+export async function getPhotoBlob(id: string): Promise<Blob | null> {
+  return memory.get(id) ?? ((await tx<Blob>('readonly', (s) => s.get(id) as IDBRequest<Blob>)) ?? null);
+}
+
+/** 所有貼紙的 id（瀏覽器儲存＋本次記憶體） */
+export async function listPhotoIds(): Promise<string[]> {
+  const keys = ((await tx<IDBValidKey[]>('readonly', (s) => s.getAllKeys())) ?? []).map(String);
+  return [...new Set([...keys, ...memory.keys()])];
+}

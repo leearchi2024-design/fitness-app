@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { GENDERS, GOAL_LABEL, LEVELS, MODE_LABEL, WORKOUT_TYPES } from '../features/onboarding/options';
 import { Onboarding } from '../features/onboarding/Onboarding';
+import { BackupPanel } from '../features/backup/BackupPanel';
 import { useStore } from '../store/AppStore';
 
 export function Me() {
@@ -51,8 +52,15 @@ export function Me() {
       </section>
 
       <section className="card flat">
-        <h2>帳號與會員</h2>
-        <p className="muted">目前為訪客模式，資料只存在這台裝置。登入、雲端同步、會員訂閱為後續階段功能。</p>
+        <h2>我的資料</h2>
+        <p className="muted">
+          紀錄只存在這支手機的瀏覽器（Safari 或 Chrome）裡，不需要帳號、不會上傳。不同瀏覽器之間的資料不會互通。
+        </p>
+        <p className="muted" style={{ marginTop: 6 }}>
+          清除瀏覽器資料、換手機，或 iPhone 長時間沒打開時，紀錄可能消失。建議把 APP「加入主畫面」，並定期下載備份。
+        </p>
+        <div style={{ marginTop: 12 }}><BackupPanel /></div>
+        <hr className="soft" />
         {confirmReset ? (
           <div className="stack" style={{ marginTop: 12 }}>
             <p style={{ fontWeight: 700 }}>確定要清除這台裝置上的所有資料？這個動作無法復原。</p>
@@ -68,7 +76,7 @@ export function Me() {
         )}
       </section>
 
-      <p className="muted" style={{ textAlign: 'center' }}>v0.3・第一階段 MVP</p>
+      <p className="muted" style={{ textAlign: 'center' }}>v0.4・第一階段 MVP</p>
     </div>
   );
 }

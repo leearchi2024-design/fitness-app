@@ -5,6 +5,7 @@ import { buildPlanSummary } from '../../lib/calc';
 import { buildWorkoutPlan, optionsFromProfile, WEEK_SCHEDULE } from '../../lib/workout';
 import { toKey } from '../../lib/date';
 import { useStore } from '../../store/AppStore';
+import { BackupPanel } from '../backup/BackupPanel';
 import type { Equipment, UserProfile, WorkoutType } from '../../types';
 import {
   ACTIVITIES, EQUIPMENTS, GENDERS, GOAL_LABEL, goalOptions, LEVELS, MINUTES, MODE_LABEL, WORKOUT_TYPES,
@@ -221,13 +222,13 @@ function Welcome({ onStart }: { onStart: () => void }) {
         <p className="muted">約 1 分鐘回答 6 個問題，產生你的專屬計畫。</p>
       </div>
       <div className="stack">
-        <button className="btn primary block" onClick={onStart}>訪客體驗，馬上開始</button>
-        <button className="btn block" disabled>Email 登入（第二階段）</button>
-        <div className="grid2">
-          <button className="btn" disabled>Google</button>
-          <button className="btn" disabled>Apple</button>
+        <button className="btn primary block" onClick={onStart}>建立我的運動</button>
+        <p className="muted" style={{ textAlign: 'center' }}>
+          不用註冊帳號。紀錄只存在你這支手機的瀏覽器（Safari 或 Chrome）裡，不會上傳。
+        </p>
+        <div style={{ display: 'grid', justifyItems: 'center' }}>
+          <BackupPanel mode="restore-only" />
         </div>
-        <p className="muted" style={{ textAlign: 'center' }}>訪客資料只存在這台裝置上。</p>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { buildPlanSummary, type PlanSummary } from '../lib/calc';
 import { toKey, uid } from '../lib/date';
+import { requestPersistentStorage } from '../lib/backup';
 import { clearPhotos, deletePhoto } from '../lib/photoStore';
 import { emptyData, localStore } from '../lib/storage';
 import type { AppData, BodyLog, FoodEntry, UserProfile, WorkoutLog } from '../types';
@@ -18,6 +19,8 @@ interface Store {
   addWater(ml: number, date?: string): void;
   setAddBack(v: boolean): void;
   reset(): void;
+  /** 從備份還原：整份取代目前資料 */
+  replaceAll(data: AppData): void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -29,7 +32,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const summary = useMemo(() => (data.profile ? buildPlanSummary(data.profile) : null), [data.profile]);
 
-  const setProfile = useCallback((profile: UserProfile) => setData((d) => ({ ...d, profile })), []);
+  const setProfile = useCallback((profile: UserProfile) => {
+    setData((d) => ({ ...d, profile }));
+    requestPersistentStorage();
+  }, []);
   const addFood = useCallback(
     (f: Omit<FoodEntry, 'id'>) => setData((d) => ({ ...d, foods: [...d.foods, { ...f, id: uid() }] })),
     [],
@@ -79,9 +85,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setData(emptyData());
   }, []);
 
+  const replaceAll = useCallback((next: AppData) => setData(next), []);
+
   const value = useMemo(
-    () => ({ data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset }),
-    [data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset],
+    () => ({ data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset, replaceAll }),
+    [data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset, replaceAll],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
