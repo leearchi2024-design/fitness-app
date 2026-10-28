@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "sync": "node scripts/sync-notion.mjs"
+    "sync": "node scripts/sync-notion.mjs",
+    "import-media": "node scripts/import-media.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
