@@ -9,7 +9,9 @@ export type Route =
   | { name: 'session' }
   | { name: 'calendar'; date?: string }
   | { name: 'food' }
-  | { name: 'me' };
+  | { name: 'me' }
+  | { name: 'care' }
+  | { name: 'careDetail'; id: string };
 
 export function parseHash(hash: string): Route {
   const [, a, b] = hash.replace(/^#/, '').split('/');
@@ -20,6 +22,7 @@ export function parseHash(hash: string): Route {
     case 'calendar': return { name: 'calendar', date: b };
     case 'food': return { name: 'food' };
     case 'me': return { name: 'me' };
+    case 'care': return b ? { name: 'careDetail', id: b } : { name: 'care' };
     default: return { name: 'today' };
   }
 }

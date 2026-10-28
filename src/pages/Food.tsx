@@ -1,6 +1,8 @@
 // ===== 分頁「飲食」：飲食紀錄與熱量計算（模組三 3-4、3-5；模組四為第二階段） =====
 import { useMemo, useState } from 'react';
+import { Sticker } from '../components/Sticker';
 import { FOODS, type FoodItem } from '../data/foods';
+import { PhotoLog } from '../features/food/PhotoLog';
 import { toKey } from '../lib/date';
 import { useDay, useStore } from '../store/AppStore';
 import type { FoodEntry, MealSlot } from '../types';
@@ -14,21 +16,21 @@ function defaultMeal(): MealSlot {
   return h < 10 ? 'breakfast' : h < 15 ? 'lunch' : h < 21 ? 'dinner' : 'snack';
 }
 
-type Mode = 'search' | 'recent' | 'manual';
+type Mode = 'photo' | 'search' | 'recent' | 'manual';
 
 export function Food() {
   const today = toKey();
-  const { data, summary, addFood, removeFood } = useStore();
+  const { data, summary, addFood, removeFood, updateFood } = useStore();
   const day = useDay(today);
   const [meal, setMeal] = useState<MealSlot>(defaultMeal);
-  const [mode, setMode] = useState<Mode>('search');
+  const [mode, setMode] = useState<Mode>('photo');
   const [q, setQ] = useState('');
   const [manual, setManual] = useState({ name: '', kcal: '', protein: '' });
 
   const results = useMemo(() => FOODS.filter((f) => !q || f.name.includes(q) || f.category.includes(q)), [q]);
   const recent = useMemo(() => {
     const seen = new Map<string, FoodEntry>();
-    [...data.foods].reverse().forEach((f) => !seen.has(f.name) && seen.set(f.name, f));
+    [...data.foods].reverse().forEach((f) => f.name !== '這一餐' && !seen.has(f.name) && seen.set(f.name, f));
     return [...seen.values()].slice(0, 12);
   }, [data.foods]);
 
@@ -52,12 +54,14 @@ export function Food() {
           ))}
         </div>
         <div className="chips" style={{ marginTop: 12 }}>
+          <button className="chip" aria-pressed={mode === 'photo'} onClick={() => setMode('photo')}>拍照記錄</button>
           <button className="chip" aria-pressed={mode === 'search'} onClick={() => setMode('search')}>搜尋食物</button>
           <button className="chip" aria-pressed={mode === 'recent'} onClick={() => setMode('recent')}>常吃／最近</button>
           <button className="chip" aria-pressed={mode === 'manual'} onClick={() => setMode('manual')}>手動輸入</button>
-          <button className="chip" disabled title="第二階段">拍照辨識</button>
           <button className="chip" disabled title="第二階段">掃條碼</button>
         </div>
+
+        {mode === 'photo' && <PhotoLog date={today} meal={meal} onSave={addFood} />}
 
         {mode === 'search' && (
           <div className="stack" style={{ marginTop: 12 }}>
@@ -112,8 +116,21 @@ export function Food() {
               <div className="list">
                 {items.map((f) => (
                   <div key={f.id} className="list-item">
+                    {f.photoId && <Sticker photoId={f.photoId} size={44} label={f.name} />}
                     <span className="grow title">{f.name}</span>
-                    <span className="num">{f.kcal}</span>
+                    {f.kcal > 0 ? (
+                      <span className="num">{f.kcal}</span>
+                    ) : (
+                      <input
+                        className="input num kcal-fill"
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="補熱量"
+                        aria-label={`${f.name} 的熱量`}
+                        onBlur={(e) => e.target.value && updateFood(f.id, { kcal: Math.max(0, +e.target.value) })}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                      />
+                    )}
                     <button className="link" onClick={() => removeFood(f.id)} aria-label={`刪除 ${f.name}`}>刪除</button>
                   </div>
                 ))}

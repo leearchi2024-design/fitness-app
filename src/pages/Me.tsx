@@ -32,6 +32,15 @@ export function Me() {
         <div className="card flat stat"><b>{summary.targetKcal}</b><span>每日熱量（{MODE_LABEL[summary.mode]}）</span></div>
       </section>
 
+      <a className="card row" href="#/care" style={{ color: 'inherit', textDecoration: 'none' }}>
+        <span className="grow">
+          <span className="eyebrow">身體狀況</span>
+          <span style={{ display: 'block', fontWeight: 900, fontSize: 18 }}>健身常見副作用</span>
+          <span className="muted">痠痛、關節痛、頭暈…原因、改善方式與何時就醫</span>
+        </span>
+        <span aria-hidden style={{ fontSize: 22 }}>›</span>
+      </a>
+
       <section className="card">
         <h2>設定</h2>
         <label className="between" style={{ fontWeight: 700 }}>
@@ -59,7 +68,7 @@ export function Me() {
         )}
       </section>
 
-      <p className="muted" style={{ textAlign: 'center' }}>v0.1・第一階段 MVP</p>
+      <p className="muted" style={{ textAlign: 'center' }}>v0.3・第一階段 MVP</p>
     </div>
   );
 }

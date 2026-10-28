@@ -1,11 +1,15 @@
 // ===== Notion 同步：純函式（可單元測試，不連網路） =====
 
-/** 三個動作資料庫的設定 */
+/** 要同步的 Notion 資料庫（withBody：連頁面內文一起抓，存成「內文」欄位） */
 export const DATABASES = [
   { key: 'strength', prefix: 's', title: '動作名稱', databaseId: 'f4c9011abf354b7d9515b4524afaebcb' },
   { key: 'yoga', prefix: 'y', title: '體式名稱', databaseId: 'd36753cca9da4eee99bfe3638cbc6edb' },
   { key: 'cardio', prefix: 'c', title: '動作名稱', databaseId: 'ba310c08be884b01bac42fc1fe8bb0eb' },
+  { key: 'side-effects', prefix: 'e', title: '副作用', databaseId: '36a23f3986434c4b911900648c1267e4', withBody: true },
 ];
+
+/** 頁面內文存放的欄位名稱 */
+export const BODY_PROP = '內文';
 
 /** 示範影片欄位名稱 */
 export const MEDIA_PROP = '示範影片';
@@ -101,4 +105,71 @@ export function buildRows(pages, existing, db) {
 /** 與現有 JSON 相同的排版：一列一個動作 */
 export function formatJson(rows) {
   return '[\n' + rows.map((r) => '  ' + JSON.stringify(r)).join(',\n') + '\n]\n';
+}
+
+// ===== 頁面內文：Notion 區塊 → 精簡 Markdown =====
+// 支援：段落、標題、項目／編號清單（含一層子項目）、引言、提示框、表格、分隔線、粗體
+
+/** rich_text 陣列 → 文字（粗體保留為 **字**） */
+export function richText(arr = []) {
+  return arr
+    .map((t) => {
+      const text = t.plain_text ?? '';
+      return t.annotations?.bold && text.trim() ? `**${text}**` : text;
+    })
+    .join('');
+}
+
+/**
+ * blocks：Notion 區塊陣列，若有子區塊請先放在 block.children（表格的列、清單的子項目）。
+ * 回傳 Markdown 字串。
+ */
+export function blocksToMarkdown(blocks = [], depth = 0) {
+  const out = [];
+  const indent = '  '.repeat(depth);
+  let n = 0; // 編號清單計數
+  for (const b of blocks) {
+    const v = b[b.type] ?? {};
+    if (b.type !== 'numbered_list_item') n = 0;
+    switch (b.type) {
+      case 'paragraph': {
+        const t = richText(v.rich_text);
+        if (t.trim()) out.push(indent + t);
+        break;
+      }
+      case 'heading_1':
+      case 'heading_2':
+      case 'heading_3':
+        out.push('## ' + richText(v.rich_text));
+        break;
+      case 'bulleted_list_item':
+        out.push(`${indent}- ${richText(v.rich_text)}`);
+        if (b.children?.length) out.push(blocksToMarkdown(b.children, depth + 1));
+        break;
+      case 'numbered_list_item':
+        n += 1;
+        out.push(`${indent}${n}. ${richText(v.rich_text)}`);
+        if (b.children?.length) out.push(blocksToMarkdown(b.children, depth + 1));
+        break;
+      case 'quote':
+      case 'callout':
+        out.push('> ' + richText(v.rich_text).replace(/\n/g, ' '));
+        break;
+      case 'divider':
+        out.push('---');
+        break;
+      case 'table': {
+        const rows = (b.children ?? []).map((r) => (r.table_row?.cells ?? []).map((c) => richText(c).replace(/\|/g, '／')));
+        if (rows.length) {
+          out.push('| ' + rows[0].join(' | ') + ' |');
+          out.push('| ' + rows[0].map(() => '---').join(' | ') + ' |');
+          for (const r of rows.slice(1)) out.push('| ' + r.join(' | ') + ' |');
+        }
+        break;
+      }
+      default:
+        break; // 圖片、嵌入等暫不轉換
+    }
+  }
+  return out.filter((l) => l !== '').join('\n');
 }

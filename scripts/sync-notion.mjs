@@ -4,13 +4,13 @@
 //   只同步重訓：NOTION_TOKEN=secret_xxx npm run sync -- strength
 //
 // 會更新：
-//   src/data/notion/{strength,yoga,cardio}.json   （欄位名稱與 Notion 相同）
+//   src/data/notion/{strength,yoga,cardio,side-effects}.json   （欄位名稱與 Notion 相同；副作用含頁面內文）
 //   public/media/{strength,yoga,cardio}/<id>.<副檔名>   （示範影片／動畫）
 // 需要 Node.js 18 以上，不需另外安裝套件。
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DATABASES, buildRows, formatJson } from './notion-lib.mjs';
+import { BODY_PROP, DATABASES, blocksToMarkdown, buildRows, formatJson } from './notion-lib.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TOKEN = process.env.NOTION_TOKEN;
@@ -57,6 +57,22 @@ async function queryAll(databaseId) {
   return pages;
 }
 
+/** 讀取區塊與子區塊（表格列、清單子項目） */
+async function getBlocks(blockId) {
+  const blocks = [];
+  let cursor;
+  do {
+    const q = new URLSearchParams({ page_size: '100', ...(cursor ? { start_cursor: cursor } : {}) });
+    const res = await fetch(`${API}/blocks/${blockId}/children?${q}`, { headers: HEADERS });
+    if (!res.ok) throw new Error(`讀取頁面內文失敗 ${res.status}`);
+    const data = await res.json();
+    blocks.push(...data.results);
+    cursor = data.has_more ? data.next_cursor : undefined;
+  } while (cursor);
+  for (const b of blocks) if (b.has_children) b.children = await getBlocks(b.id);
+  return blocks;
+}
+
 async function download(url, path) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`下載失敗 ${res.status}`);
@@ -72,6 +88,13 @@ for (const db of targets) {
   const pages = await queryAll(db.databaseId);
   const { rows, downloads } = buildRows(pages, existing, db);
 
+  if (db.withBody) {
+    for (const row of rows) {
+      const md = blocksToMarkdown(await getBlocks(row.notionId));
+      if (md) row[BODY_PROP] = md;
+    }
+  }
+
   for (const d of downloads) {
     try {
       await download(d.url, d.path);
@@ -84,7 +107,7 @@ for (const db of targets) {
   await writeFile(jsonPath, formatJson(rows));
   const added = rows.filter((r) => !existing.some((x) => x.notionId === r.notionId)).length;
   const removed = existing.filter((x) => !rows.some((r) => r.notionId === x.notionId)).length;
-  console.log(`${db.key}：${rows.length} 個動作（新增 ${added}、移除 ${removed}）、示範檔 ${downloads.length} 個`);
+  console.log(`${db.key}：${rows.length} 筆（新增 ${added}、移除 ${removed}）、示範檔 ${downloads.length} 個`);
 }
 
 if (failed) {

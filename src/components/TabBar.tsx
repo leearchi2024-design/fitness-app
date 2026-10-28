@@ -8,7 +8,7 @@ const TABS: { key: Route['name']; href: string; label: string; icon: ReactNode; 
   { key: 'train', href: '#/train', label: '跟練', icon: <IconTrain />, match: ['train', 'exercise'] },
   { key: 'calendar', href: '#/calendar', label: '日曆', icon: <IconCalendar />, match: ['calendar'] },
   { key: 'food', href: '#/food', label: '飲食', icon: <IconFood />, match: ['food'] },
-  { key: 'me', href: '#/me', label: '我的', icon: <IconMe />, match: ['me'] },
+  { key: 'me', href: '#/me', label: '我的', icon: <IconMe />, match: ['me', 'care', 'careDetail'] },
 ];
 
 export function TabBar({ route }: { route: Route }) {

@@ -82,6 +82,8 @@ export interface FoodEntry {
   carbsG?: number;
   fatG?: number;
   source: 'manual' | 'search' | 'recent' | 'photo' | 'barcode';
+  /** 拍照記錄的貼紙（存在 IndexedDB 的 id） */
+  photoId?: string;
 }
 
 export interface WorkoutLog {

@@ -1,7 +1,7 @@
 {
   "name": "fitness-app",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "依性別與目標個人化的健身 APP（網頁 + 手機 PWA）",
   "type": "module",
   "scripts": {

@@ -73,3 +73,52 @@ describe('欄位轉換', () => {
     expect(extOf({ name: 'youtube', url: 'https://youtu.be/abc' })).toBeUndefined();
   });
 });
+
+import { blocksToMarkdown } from './notion-lib.mjs';
+
+const t = (s, bold = false) => [{ plain_text: s, annotations: { bold } }];
+
+describe('頁面內文轉換（副作用資料庫）', () => {
+  it('引言、標題、表格、清單、粗體都轉成 Markdown', () => {
+    const blocks = [
+      { type: 'quote', quote: { rich_text: t('補充品不是必需品。') } },
+      { type: 'heading_2', heading_2: { rich_text: t('常見補充品與副作用') } },
+      {
+        type: 'table', has_children: true, table: {},
+        children: [
+          { type: 'table_row', table_row: { cells: [t('補充品'), t('常見副作用')] } },
+          { type: 'table_row', table_row: { cells: [t('肌酸'), t('初期體重上升約 1–2 公斤')] } },
+        ],
+      },
+      { type: 'numbered_list_item', numbered_list_item: { rich_text: [...t('動態恢復', true), ...t('：散步、伸展')] } },
+      { type: 'numbered_list_item', numbered_list_item: { rich_text: t('放鬆') } },
+      { type: 'bulleted_list_item', bulleted_list_item: { rich_text: t('雷射') }, children: [
+        { type: 'bulleted_list_item', bulleted_list_item: { rich_text: t('紅紋：脈衝染料雷射') } },
+      ] },
+      { type: 'image', image: {} },
+    ];
+    expect(blocksToMarkdown(blocks)).toBe([
+      '> 補充品不是必需品。',
+      '## 常見補充品與副作用',
+      '| 補充品 | 常見副作用 |',
+      '| --- | --- |',
+      '| 肌酸 | 初期體重上升約 1–2 公斤 |',
+      '1. **動態恢復**：散步、伸展',
+      '2. 放鬆',
+      '- 雷射',
+      '  - 紅紋：脈衝染料雷射',
+    ].join('\n'));
+  });
+
+  it('副作用資料庫的欄位格式（23 筆、嚴重程度合法）', () => {
+    const rows = JSON.parse(readFileSync(new URL('../src/data/notion/side-effects.json', import.meta.url), 'utf8'));
+    const levels = ['輕微・多為暫時', '無害・外觀問題', '需調整訓練', '需留意就醫', '危險・立即就醫'];
+    expect(rows).toHaveLength(23);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(23);
+    for (const r of rows) {
+      expect(levels).toContain(r.嚴重程度);
+      expect(r.副作用 && r.主要原因 && r.改善方式 && r.何時就醫).toBeTruthy();
+      expect(Array.isArray(r.常見族群)).toBe(true);
+    }
+  });
+});

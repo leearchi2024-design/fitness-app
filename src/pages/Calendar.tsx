@@ -1,5 +1,6 @@
 // ===== 分頁「日曆」：月曆、每日紀錄、身體變化週報（模組三） =====
 import { useMemo, useState } from 'react';
+import { Sticker } from '../components/Sticker';
 import { fromKey, monthGrid, toKey } from '../lib/date';
 import { go } from '../router';
 import { useDay, useStore } from '../store/AppStore';
@@ -16,6 +17,11 @@ export function Calendar({ date }: { date?: string }) {
   const [view, setView] = useState({ y: sel.getFullYear(), m: sel.getMonth() });
   const cells = useMemo(() => monthGrid(view.y, view.m), [view]);
   const marks = useMemo(() => dayMarks(data), [data]);
+  const stickers = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    data.foods.forEach((f) => f.photoId && (m[f.date] ??= []).push(f.photoId));
+    return m;
+  }, [data.foods]);
   const todayKey = toKey();
 
   const shift = (d: number) => setView(({ y, m }) => ({ y: m + d < 0 ? y - 1 : m + d > 11 ? y + 1 : y, m: (m + d + 12) % 12 }));
@@ -35,17 +41,25 @@ export function Calendar({ date }: { date?: string }) {
           {cells.map((d) => {
             const k = toKey(d);
             const mk = marks[k];
+            const st = stickers[k];
             return (
               <button
                 key={k}
-                className={`${d.getMonth() !== view.m ? 'out' : ''} ${k === todayKey ? 'today' : ''}`}
+                className={`${d.getMonth() !== view.m ? 'out' : ''} ${k === todayKey ? 'today' : ''} ${st ? 'has-sticker' : ''}`}
                 aria-pressed={k === selected}
+                aria-label={`${d.getMonth() + 1} 月 ${d.getDate()} 日${st ? `，${st.length} 張飲食貼紙` : ''}`}
                 onClick={() => go(`/calendar/${k}`)}
               >
                 {d.getDate()}
+                {st && (
+                  <span className="cal-sticker">
+                    <Sticker photoId={st[st.length - 1]} size={24} />
+                    {st.length > 1 && <span className="cal-more num">+{st.length - 1}</span>}
+                  </span>
+                )}
                 <span className="marks">
                   {mk?.w && <i className="w" />}
-                  {mk?.f && <i className="f" />}
+                  {mk?.f && !st && <i className="f" />}
                   {mk?.b && <i className="b" />}
                   {mk?.p && <i className="p" />}
                 </span>
@@ -55,7 +69,7 @@ export function Calendar({ date }: { date?: string }) {
         </div>
         <div className="legend" style={{ marginTop: 10 }}>
           <span><i style={{ background: 'var(--accent)' }} />運動完成</span>
-          <span><i style={{ background: 'var(--ok)' }} />飲食已記錄</span>
+          <span><i style={{ background: 'var(--ok)' }} />飲食已記錄（拍照的會顯示貼紙）</span>
           <span><i style={{ background: 'var(--dot)' }} />量了體重</span>
           {data.profile?.body.cycle && <span><i style={{ background: '#d6336c' }} />生理期（預估）</span>}
         </div>
@@ -85,6 +99,19 @@ function DayDetail({ date }: { date: string }) {
         ) : <p className="muted">尚無紀錄</p>}
 
         <span className="eyebrow">飲食（{day.eaten} 大卡）</span>
+        {day.foods.some((f) => f.photoId) && (
+          <div className="sticker-wall" aria-label="今天的飲食貼紙">
+            {day.foods.filter((f) => f.photoId).map((f) => (
+              <figure key={f.id}>
+                <Sticker photoId={f.photoId!} size={76} label={f.name} />
+                <figcaption>
+                  {MEALS.find((m) => m.id === f.meal)?.label}・{f.name}
+                  {f.kcal > 0 && <span className="num">　{f.kcal}</span>}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
         {MEALS.map((m) => {
           const items = day.foods.filter((f) => f.meal === m.id);
           return (

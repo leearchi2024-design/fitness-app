@@ -76,6 +76,14 @@ export function Today() {
         </div>
       </section>
 
+      <a className="card flat row" href="#/care" style={{ color: 'inherit', textDecoration: 'none' }}>
+        <span className="grow">
+          <b>練完不舒服？</b>
+          <span className="muted" style={{ display: 'block' }}>看看健身常見副作用與改善方式</span>
+        </span>
+        <span aria-hidden>›</span>
+      </a>
+
       <section className="grid2">
         <button className="card" style={{ textAlign: 'left' }} onClick={() => go('/food')}>
           <span className="eyebrow">飲食</span>

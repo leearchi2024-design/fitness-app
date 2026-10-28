@@ -92,6 +92,11 @@ export function Session() {
               </button>
             ))}
           </div>
+          {feeling >= 4 && (
+            <a href="#/care" style={{ color: 'var(--paper)', fontWeight: 700 }}>
+              覺得太累或身體不舒服？看看常見狀況與處理方式 ›
+            </a>
+          )}
         </main>
         <footer>
           <button

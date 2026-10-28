@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { buildPlanSummary, type PlanSummary } from '../lib/calc';
 import { toKey, uid } from '../lib/date';
+import { clearPhotos, deletePhoto } from '../lib/photoStore';
 import { emptyData, localStore } from '../lib/storage';
 import type { AppData, BodyLog, FoodEntry, UserProfile, WorkoutLog } from '../types';
 
@@ -11,6 +12,7 @@ interface Store {
   setProfile(p: UserProfile): void;
   addFood(f: Omit<FoodEntry, 'id'>): void;
   removeFood(id: string): void;
+  updateFood(id: string, patch: Partial<Omit<FoodEntry, 'id'>>): void;
   addWorkout(w: Omit<WorkoutLog, 'id'>): void;
   saveBodyLog(b: BodyLog): void;
   addWater(ml: number, date?: string): void;
@@ -33,7 +35,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
   const removeFood = useCallback(
-    (id: string) => setData((d) => ({ ...d, foods: d.foods.filter((f) => f.id !== id) })),
+    (id: string) =>
+      setData((d) => {
+        const photoId = d.foods.find((f) => f.id === id)?.photoId;
+        if (photoId) deletePhoto(photoId);
+        return { ...d, foods: d.foods.filter((f) => f.id !== id) };
+      }),
+    [],
+  );
+  const updateFood = useCallback(
+    (id: string, patch: Partial<Omit<FoodEntry, 'id'>>) =>
+      setData((d) => ({ ...d, foods: d.foods.map((f) => (f.id === id ? { ...f, ...patch } : f)) })),
     [],
   );
   const addWorkout = useCallback(
@@ -63,12 +75,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   );
   const reset = useCallback(() => {
     localStore.clear();
+    clearPhotos();
     setData(emptyData());
   }, []);
 
   const value = useMemo(
-    () => ({ data, summary, setProfile, addFood, removeFood, addWorkout, saveBodyLog, addWater, setAddBack, reset }),
-    [data, summary, setProfile, addFood, removeFood, addWorkout, saveBodyLog, addWater, setAddBack, reset],
+    () => ({ data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset }),
+    [data, summary, setProfile, addFood, removeFood, updateFood, addWorkout, saveBodyLog, addWater, setAddBack, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -1,4 +1,4 @@
-# 練起來 v0.2｜發布檔
+# 練起來 v0.3｜發布檔
 
 這個資料夾是**已經建置好的成品**，不需要安裝任何東西。整包上傳到 GitHub 就能變成網站，手機也能「加入主畫面」當 APP 用。
 
@@ -15,7 +15,7 @@
 | `icon-192.png`、`icon-512.png` | Android 與安裝畫面圖示 |
 | `icon-maskable-512.png` | Android 自動裁形狀用的圖示 |
 | `icon.svg`、`favicon-32.png` | 瀏覽器分頁小圖示 |
-| `media/strength/s01.svg`… | 示範影片／動畫（檔名 = 動作 id，對照表見原始碼 `src/data/notion/strength.json`） |
+| `media/strength/`、`media/yoga/`、`media/cardio/` | 示範影片／動畫（檔名 = 動作 id，例如 `strength/s01.svg`；對照表見原始碼 `src/data/notion/*.json`）。由 Notion 同步程式下載 |
 | `.nojekyll` | 告訴 GitHub Pages 原樣發布，不要再處理（隱藏檔，記得一起上傳） |
 
 ## 上傳到 GitHub（不用打指令的方法）

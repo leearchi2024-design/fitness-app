@@ -5,6 +5,7 @@ import { ExerciseDetail } from './pages/ExerciseDetail';
 import { Food } from './pages/Food';
 import { Me } from './pages/Me';
 import { Session } from './pages/Session';
+import { SideEffectDetail, SideEffectList } from './pages/SideEffects';
 import { Today } from './pages/Today';
 import { Train } from './pages/Train';
 import { useRoute } from './router';
@@ -28,6 +29,8 @@ export function App() {
       {route.name === 'calendar' && <Calendar date={route.date} />}
       {route.name === 'food' && <Food />}
       {route.name === 'me' && <Me />}
+      {route.name === 'care' && <SideEffectList />}
+      {route.name === 'careDetail' && <SideEffectDetail id={route.id} />}
       <TabBar route={route} />
     </div>
   );
