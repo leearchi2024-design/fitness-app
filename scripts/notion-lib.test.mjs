@@ -26,7 +26,7 @@ function toApiPage(r, created = '2026-10-19T07:24:14.000Z') {
       難度: { type: 'select', select: { name: r.難度 } },
       示範影片: {
         type: 'files',
-        files: [{ type: 'file', name: `${r.動作名稱}.svg`, file: { url: `https://prod-files-secure.s3.us-west-2.amazonaws.com/x/${encodeURIComponent(r.動作名稱)}.svg?X-Amz-Expires=300` } }],
+        files: r.示範影片 ? [{ type: 'file', name: `${r.動作名稱}.${r.示範影片.split('.').pop()}`, file: { url: `https://prod-files-secure.s3.us-west-2.amazonaws.com/x/${encodeURIComponent(r.動作名稱)}.${r.示範影片.split('.').pop()}?X-Amz-Expires=300` } }] : [],
       },
     },
   };
@@ -36,23 +36,24 @@ describe('Notion 同步：重訓資料庫', () => {
   it('同步結果與目前 strength.json 完全一致（18 個動作、固定 id、示範檔路徑）', () => {
     const pages = [...existing].reverse().map((r) => toApiPage(r)); // 打亂順序也要維持原排序
     const { rows, downloads } = buildRows(pages, existing, db);
-    expect(rows).toHaveLength(18);
-    expect(formatJson(rows)).toBe(strengthJson);
-    expect(downloads).toHaveLength(18);
+    expect(rows).toHaveLength(existing.length);
+    expect(rows).toEqual(existing); // 比對資料內容（不受欄位順序影響）
+    expect(downloads).toHaveLength(existing.filter((r) => r.示範影片).length);
     expect(downloads[0]).toMatchObject({ path: 'media/strength/s01.svg', name: '反向弓箭步' });
   });
 
   it('Notion 新增動作：接續編號 s19，排在最後', () => {
-    const extra = { ...existing[0], notionId: 'aaaaaaaabbbbccccddddeeeeeeeeeeee', 動作名稱: '保加利亞分腿蹲' };
+    const extra = { ...existing[0], notionId: 'aaaaaaaabbbbccccddddeeeeeeeeeeee', 動作名稱: '保加利亞分腿蹲', 示範影片: 'x.svg' };
+    const nextId = `s${String(existing.length + 1).padStart(2, '0')}`;
     const pages = [...existing.map((r) => toApiPage(r)), toApiPage(extra, '2026-10-21T00:00:00.000Z')];
     const { rows } = buildRows(pages, existing, db);
-    expect(rows.at(-1)).toMatchObject({ id: 's19', 動作名稱: '保加利亞分腿蹲', 示範影片: 'media/strength/s19.svg' });
+    expect(rows.at(-1)).toMatchObject({ id: nextId, 動作名稱: '保加利亞分腿蹲', 示範影片: `media/strength/${nextId}.svg` });
   });
 
   it('Notion 刪除動作：從清單移除，其他動作 id 不變', () => {
     const pages = existing.filter((r) => r.id !== 's02').map((r) => toApiPage(r));
     const { rows } = buildRows(pages, existing, db);
-    expect(rows).toHaveLength(17);
+    expect(rows).toHaveLength(existing.length - 1);
     expect(rows.find((r) => r.動作名稱 === '啞鈴肩推').id).toBe('s03');
   });
 
@@ -62,6 +63,16 @@ describe('Notion 同步：重訓資料庫', () => {
     const { rows, downloads } = buildRows([p], existing, db);
     expect(rows[0].示範影片).toBeUndefined();
     expect(downloads).toHaveLength(0);
+  });
+});
+
+describe('欄位順序', () => {
+  it('Notion 回傳的欄位順序不同時，仍沿用現有檔案的順序', () => {
+    const shuffled = toApiPage(existing[0]);
+    shuffled.properties = Object.fromEntries(Object.entries(shuffled.properties).reverse());
+    const { rows } = buildRows([shuffled], existing, db);
+    expect(Object.keys(rows[0])).toEqual(Object.keys(existing[0]));
+    expect(formatJson(rows).split('\n')[1]).toBe(strengthJson.split('\n')[1].replace(/,$/, ''));
   });
 });
 
@@ -110,11 +121,11 @@ describe('頁面內文轉換（副作用資料庫）', () => {
     ].join('\n'));
   });
 
-  it('副作用資料庫的欄位格式（23 筆、嚴重程度合法）', () => {
+  it('副作用資料庫的欄位格式（每筆都有必要欄位、嚴重程度合法）', () => {
     const rows = JSON.parse(readFileSync(new URL('../src/data/notion/side-effects.json', import.meta.url), 'utf8'));
     const levels = ['輕微・多為暫時', '無害・外觀問題', '需調整訓練', '需留意就醫', '危險・立即就醫'];
-    expect(rows).toHaveLength(23);
-    expect(new Set(rows.map((r) => r.id)).size).toBe(23);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
     for (const r of rows) {
       expect(levels).toContain(r.嚴重程度);
       expect(r.副作用 && r.主要原因 && r.改善方式 && r.何時就醫).toBeTruthy();

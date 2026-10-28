@@ -97,9 +97,22 @@ export function buildRows(pages, existing, db) {
       row[MEDIA_PROP] = path;
       downloads.push({ url: file.url, path, name: row[db.title] });
     }
-    rows.push(row);
+    rows.push(orderLike(row, existingKeyOrder(existing)));
   }
   return { rows, downloads };
+}
+
+/** 現有檔案的欄位順序（取第一列；沒有資料時用 Notion 回傳的順序） */
+function existingKeyOrder(existing) {
+  return existing.length ? Object.keys(existing[0]) : [];
+}
+
+/** 依指定順序排列欄位，新欄位接在後面；讓每次同步的差異只出現在真的有改的地方 */
+export function orderLike(row, order) {
+  const out = {};
+  for (const k of ['id', 'notionId', ...order]) if (k in row && !(k in out)) out[k] = row[k];
+  for (const k of Object.keys(row)) if (!(k in out)) out[k] = row[k];
+  return out;
 }
 
 /** 與現有 JSON 相同的排版：一列一個動作 */

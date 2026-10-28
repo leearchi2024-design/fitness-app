@@ -4,9 +4,10 @@ import { buildWorkoutPlan, filterExercises, targetParts } from './workout';
 
 describe('動作資料', () => {
   it('三個 Notion 資料庫都有轉入', () => {
-    expect(EXERCISES.filter((e) => e.source === 'strength')).toHaveLength(18);
-    expect(EXERCISES.filter((e) => e.source === 'yoga')).toHaveLength(16);
-    expect(EXERCISES.filter((e) => e.source === 'cardio')).toHaveLength(14);
+    // Notion 之後可能新增動作，所以只檢查每個資料庫都有資料、id 不重複
+    expect(EXERCISES.filter((e) => e.source === 'strength').length).toBeGreaterThan(0);
+    expect(EXERCISES.filter((e) => e.source === 'yoga').length).toBeGreaterThan(0);
+    expect(EXERCISES.filter((e) => e.source === 'cardio').length).toBeGreaterThan(0);
     expect(new Set(EXERCISES.map((e) => e.id)).size).toBe(EXERCISES.length);
   });
 });
